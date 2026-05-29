@@ -649,7 +649,7 @@ const MainDashboard: React.FC<Props> = ({
 
             {/* Main Surface */}
             <div className="flex-1 flex flex-col min-w-0 h-screen h-[100dvh] overflow-y-auto no-scrollbar pb-32 lg:pb-0 relative">
-                <header className="px-4 lg:px-8 pb-4 lg:pb-6 pt-[calc(1rem+env(safe-area-inset-top))] lg:pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between glass sticky top-0 z-[30] border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90">
+                <header className="px-4 lg:px-8 pb-4 lg:pb-6 pt-[calc(1rem+env(safe-area-inset-top))] lg:pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between glass sticky top-0 z-50 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90">
                     <div className="flex items-center gap-3">
                         {/* Profile Picture / Menu Trigger */}
                         <button onClick={() => setIsMobileSidebarOpen(true)} className="lg:hidden w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 active:scale-95 transition-all relative border border-slate-200 dark:border-slate-700">
@@ -759,7 +759,7 @@ const MainDashboard: React.FC<Props> = ({
                                 <span className="text-[9px] font-black uppercase tracking-widest leading-none">Offline</span>
                             </div>
                         )}
-                        <div className="relative">
+                        <div className="relative z-[100]">
                             <button onClick={() => {
                                 setIsNotificationsOpen(!isNotificationsOpen);
                                 setIsBatchSwitcherOpen(false);
@@ -774,7 +774,7 @@ const MainDashboard: React.FC<Props> = ({
                             </button>
                             {isNotificationsOpen && (
                                 <div
-                                    className="absolute right-[-3.5rem] sm:right-0 top-full mt-4 w-[85vw] sm:w-[24rem] bg-white dark:bg-slate-900 rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] border border-slate-200/80 dark:border-slate-800/80 p-1.5 z-[60] overflow-hidden backdrop-blur-xl"
+                                    className="absolute right-[-3.5rem] sm:right-0 top-full mt-4 w-[85vw] sm:w-[24rem] bg-white dark:bg-slate-900 rounded-[2rem] shadow-[0_20px_50px_-12px_rgba(0,0,0,0.15)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.5)] border border-slate-200/80 dark:border-slate-800/80 p-1.5 z-[110] overflow-hidden backdrop-blur-xl"
                                 >
                                     <div className="p-5 border-b border-slate-100 dark:border-slate-800/80 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/20 rounded-t-[1.5rem] mb-1">
                                         <div className="flex items-center gap-2">

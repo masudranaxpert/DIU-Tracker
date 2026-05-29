@@ -412,7 +412,7 @@ const QuestionBankView: React.FC = () => {
           </button>
         </div>
 
-        <div className="relative z-40 rounded-3xl bg-white/80 dark:bg-slate-950/55 border border-indigo-100 dark:border-slate-800 shadow-xl shadow-indigo-900/5 backdrop-blur-xl p-3 sm:p-4">
+        <div className="relative rounded-3xl bg-white/80 dark:bg-slate-950/55 border border-indigo-100 dark:border-slate-800 shadow-xl shadow-indigo-900/5 backdrop-blur-xl p-3 sm:p-4">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <span className="flex items-center gap-2 text-sm font-black text-slate-950 dark:text-white">
               <Filter size={17} className="text-indigo-600 dark:text-indigo-400" />
