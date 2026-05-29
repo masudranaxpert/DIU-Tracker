@@ -168,16 +168,14 @@ export const adminService = {
 
   // Students (PIN unlock + CR directory — `students` table, not `users`)
   async fetchSectionStudents(batchId: string, section: string): Promise<Student[]> {
-    try {
-      const sec = String(section).trim().toUpperCase();
-      const result = await apiClient.get<Student[]>(
-        `/students?batch_id=${encodeURIComponent(batchId)}&section=${encodeURIComponent(sec)}`
-      );
-      return result.data || [];
-    } catch (e) {
-      console.error('Error fetching section students:', e);
-      return [];
+    const sec = String(section).trim().toUpperCase();
+    const result = await apiClient.get<Student[]>(
+      `/students?batch_id=${encodeURIComponent(batchId)}&section=${encodeURIComponent(sec)}`
+    );
+    if (result.error) {
+      throw new Error(result.error);
     }
+    return result.data || [];
   },
 
   /** @deprecated Use fetchSectionStudents — kept for compatibility */

@@ -70,8 +70,13 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
   );
 
   const loadRoster = useCallback(async () => {
-    const data = await adminService.fetchSectionStudents(batchId, section);
-    setRoster(data);
+    try {
+      const data = await adminService.fetchSectionStudents(batchId, section);
+      setRoster(data);
+    } catch (e) {
+      console.error('Failed to load roster:', e);
+      setRoster([]);
+    }
   }, [batchId, section]);
 
   const loadGroups = useCallback(

@@ -20,6 +20,8 @@ import { matchesStudentDirectorySearch } from '@/shared/lib/studentDirectorySear
 interface Props {
   batchId: string;
   section: Section;
+  /** When true (CR), section cannot be changed via the header switcher. */
+  isSectionLocked?: boolean;
 }
 
 const groupBadgeClass = (sub?: string | null) => {
@@ -28,11 +30,12 @@ const groupBadgeClass = (sub?: string | null) => {
   return 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700';
 };
 
-const StudentProfilesView: React.FC<Props> = ({ batchId, section }) => {
+const StudentProfilesView: React.FC<Props> = ({ batchId, section, isSectionLocked }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const CACHE_KEY = `student_directory_${batchId}_${section}`;
 
@@ -51,12 +54,18 @@ const StudentProfilesView: React.FC<Props> = ({ batchId, section }) => {
 
   const fetchData = async () => {
     setIsRefreshing(true);
+    setFetchError(null);
     try {
       const data = await adminService.fetchSectionStudents(batchId, section);
       setStudents(data);
       localStorage.setItem(CACHE_KEY, JSON.stringify(data));
     } catch (error) {
       console.error('Error fetching student directory:', error);
+      setFetchError(
+        error instanceof Error ? error.message : 'Could not load student directory.'
+      );
+      setStudents([]);
+      localStorage.removeItem(CACHE_KEY);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -104,6 +113,7 @@ const StudentProfilesView: React.FC<Props> = ({ batchId, section }) => {
               </h1>
               <p className="text-indigo-100 text-[10px] sm:text-xs font-bold uppercase tracking-[0.15em] sm:tracking-[0.2em] mt-0.5">
                 Section {section}
+                {isSectionLocked && ' · your section only'}
               </p>
             </div>
           </div>
@@ -147,6 +157,12 @@ const StudentProfilesView: React.FC<Props> = ({ batchId, section }) => {
           </p>
         )}
       </div>
+
+      {fetchError && (
+        <div className="mb-4 rounded-xl border border-rose-200 dark:border-rose-900/50 bg-rose-50 dark:bg-rose-950/30 px-4 py-3 text-sm font-medium text-rose-700 dark:text-rose-300">
+          {fetchError}
+        </div>
+      )}
 
       <div className="min-h-[12rem]">
         {isLoading && students.length === 0 ? (

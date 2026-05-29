@@ -13,17 +13,46 @@ router = APIRouter(
 )
 
 
+def _norm_section(value: Optional[str]) -> str:
+    return (value or "").strip().upper()
+
+
 def _ensure_section_access(user: Optional[User], batch_id: str, section: str) -> None:
-    """A CR may only read its own section's directory; anonymous/student callers pass through."""
-    if user is None or not user.is_cr:
-        return
-    same_batch = (user.batch_id or "") == batch_id
-    same_section = (user.section or "").strip().upper() == (section or "").strip().upper()
-    if not (same_batch and same_section):
+    """Student directory is authenticated; users may only read their own batch+section."""
+    if user is None:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="CRs can only view students from their own section.",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sign in to view the student directory.",
         )
+
+    target_section = _norm_section(section)
+    user_section = _norm_section(user.section)
+    same_batch = (user.batch_id or "") == batch_id
+
+    if user.is_cr:
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your CR account is not active.",
+            )
+        if not user_section:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CR profile has no section assigned.",
+            )
+        if not (same_batch and user_section == target_section):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="CRs can only view students from their own section.",
+            )
+        return
+
+    if user_section:
+        if not (same_batch and user_section == target_section):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You can only view students from your own section.",
+            )
 
 @router.get("/lookup", response_model=schemas.StudentLookupResult)
 def lookup_student_get(student_id: str, db: Session = Depends(get_db)):

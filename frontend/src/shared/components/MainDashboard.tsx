@@ -222,6 +222,33 @@ const MainDashboard: React.FC<Props> = ({
         userProfile?.batch_id === selectedBatch &&
         userProfile?.section === selectedSection;
 
+    /** Student directory is scoped to the signed-in user's section; CRs cannot browse other sections. */
+    const profileSection = userProfile?.section
+        ? (userProfile.section.trim().toUpperCase() as Section)
+        : null;
+    const isActiveCr = Boolean(userProfile?.is_cr && userProfile?.is_active);
+    const studentDirectorySection = profileSection || selectedSection!;
+    const isCrDirectoryLocked = isActiveCr && Boolean(profileSection);
+
+    useEffect(() => {
+        if (!isCrDirectoryLocked || !profileSection || activeTab !== 'student_profiles') return;
+        if (selectedSection !== profileSection) {
+            setSelectedSection(profileSection);
+        }
+        if (userProfile?.batch_id && selectedBatch !== userProfile.batch_id) {
+            onBatchChange(userProfile.batch_id);
+        }
+    }, [
+        isCrDirectoryLocked,
+        profileSection,
+        activeTab,
+        selectedSection,
+        selectedBatch,
+        setSelectedSection,
+        onBatchChange,
+        userProfile?.batch_id,
+    ]);
+
     // Automatically restart tutorial when tab changes during an auto-tour session
     useEffect(() => {
         if (isAutoTour && runTutorial) {
@@ -690,10 +717,28 @@ const MainDashboard: React.FC<Props> = ({
                                     {isSectionSwitcherOpen && (
                                         <div className="absolute left-0 mt-2 bg-white dark:bg-slate-900 shadow-2xl rounded-2xl border border-slate-100 dark:border-slate-800 p-3 flex flex-col gap-3 z-50 min-w-[200px] shadow-pro">
                                             <div className="flex flex-wrap gap-1">
-                                                {SECTIONS.map(s => (
-                                                    <button key={s} onClick={(e) => { e.stopPropagation(); setSelectedSection(s); }} className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all ${selectedSection === s ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`} > {s} </button>
+                                                {(isCrDirectoryLocked && profileSection
+                                                    ? [profileSection]
+                                                    : SECTIONS
+                                                ).map(s => (
+                                                    <button
+                                                        key={s}
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            if (!isCrDirectoryLocked) setSelectedSection(s);
+                                                        }}
+                                                        disabled={isCrDirectoryLocked}
+                                                        className={`w-8 h-8 flex items-center justify-center rounded-lg text-xs font-black transition-all ${selectedSection === s ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'} ${isCrDirectoryLocked ? 'opacity-80 cursor-default' : 'cursor-pointer'}`}
+                                                    >
+                                                        {s}
+                                                    </button>
                                                 ))}
                                             </div>
+                                            {isCrDirectoryLocked && activeTab === 'student_profiles' && (
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest px-1">
+                                                    CR directory: your section only
+                                                </p>
+                                            )}
                                             <div className="h-px bg-slate-100 dark:bg-slate-800" />
                                             <div className="flex gap-1">
                                                 <button onClick={(e) => { e.stopPropagation(); setSelectedSubSection(null); setIsSectionSwitcherOpen(false); }} className={`flex-1 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${!selectedSubSection ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`} > Theory </button>
@@ -828,7 +873,6 @@ const MainDashboard: React.FC<Props> = ({
                         >
                             {activeTab === 'dashboard' && (
                                 <Dashboard
-                                    records={records}
                                     courses={courses}
                                     notices={notices}
                                     deadlines={deadlines}
@@ -918,8 +962,9 @@ const MainDashboard: React.FC<Props> = ({
                             )}
                             {activeTab === 'student_profiles' && userProfile && (
                                 <StudentProfilesView
-                                    batchId={selectedBatch!}
-                                    section={selectedSection!}
+                                    batchId={userProfile.batch_id || selectedBatch!}
+                                    section={studentDirectorySection}
+                                    isSectionLocked={isCrDirectoryLocked}
                                 />
                             )}
                             {activeTab === 'admin' && (
