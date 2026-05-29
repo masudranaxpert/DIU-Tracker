@@ -78,17 +78,19 @@ class UserManager(BaseUserManager[User, str]):
             if clash is not None and str(clash.id) != str(user.id):
                 raise exceptions.UserAlreadyExists()
 
-        user.email = new_email
-        user.student_id = normalize_student_id(user_create.student_id) or user.student_id
-        user.full_name = user_create.full_name or user.full_name
-        user.batch_id = user_create.batch_id or user.batch_id
-        user.section = user_create.section or user.section
-        user.sub_section = user_create.sub_section if user_create.sub_section is not None else user.sub_section
-        user.is_cr = True
-        user.is_active = False
-        user.is_verified = False
-        user.hashed_password = self.password_helper.hash(password)
-        return await self.user_db.update(user)
+        update_dict = {
+            "email": new_email,
+            "student_id": normalize_student_id(user_create.student_id) or user.student_id,
+            "full_name": user_create.full_name or user.full_name,
+            "batch_id": user_create.batch_id or user.batch_id,
+            "section": user_create.section or user.section,
+            "sub_section": user_create.sub_section if user_create.sub_section is not None else user.sub_section,
+            "is_cr": True,
+            "is_active": False,
+            "is_verified": False,
+            "hashed_password": self.password_helper.hash(password),
+        }
+        return await self.user_db.update(user, update_dict)
 
     async def create(
         self,

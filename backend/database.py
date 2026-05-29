@@ -315,12 +315,30 @@ def _migrate_teacher_profiles_fields(connection):
         connection.execute(text("ALTER TABLE teacher_profiles ADD COLUMN avatar_url VARCHAR"))
 
 
+def _run_mysql_migrations(connection):
+    """Widen byte-count columns to BIGINT — INT overflows on multi-GB drive quotas."""
+    big_int_columns = {
+        "rclone_drive_accounts": ("storage_limit_bytes", "storage_usage_bytes"),
+    }
+    for table, columns in big_int_columns.items():
+        for column in columns:
+            data_type = connection.execute(
+                text(
+                    "SELECT DATA_TYPE FROM information_schema.COLUMNS "
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = :t AND COLUMN_NAME = :c"
+                ),
+                {"t": table, "c": column},
+            ).scalar()
+            if data_type and data_type.lower() != "bigint":
+                connection.execute(text(f"ALTER TABLE {table} MODIFY {column} BIGINT NULL"))
+
+
 async def create_db_and_tables():
     import models  # noqa: F401 — register all tables on Base.metadata
     async with async_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-        # PRAGMA-based migrations are SQLite-only; on MariaDB a fresh
-        # create_all already produces the current schema.
         if IS_SQLITE:
             await conn.run_sync(_run_sqlite_migrations)
+        else:
+            await conn.run_sync(_run_mysql_migrations)
         await conn.run_sync(_seed_reference_data)

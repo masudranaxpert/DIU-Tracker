@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer
+from sqlalchemy import BigInteger, Boolean, Date, DateTime, Float, ForeignKey, Integer
 from sqlalchemy import String as _String
 from sqlalchemy import Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -315,8 +315,8 @@ class RcloneDriveAccount(Base):
     authorized_email: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     token_status: Mapped[str] = mapped_column(String, default="pending", nullable=False)
-    storage_limit_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    storage_usage_bytes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    storage_limit_bytes: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
+    storage_usage_bytes: Mapped[Optional[int]] = mapped_column(BigInteger, nullable=True)
     quota_checked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     last_error: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     token_updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
