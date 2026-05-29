@@ -25,7 +25,7 @@ services:
     container_name: tracker-phpmyadmin
     restart: unless-stopped
     ports:
-      - "9936:80"
+      - "9986:80"
     environment:
       PMA_HOST: db
       PMA_PORT: "3306"
