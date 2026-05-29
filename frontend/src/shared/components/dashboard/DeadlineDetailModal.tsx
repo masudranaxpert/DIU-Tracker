@@ -1,7 +1,11 @@
 import React from 'react';
 import { Deadline, Course } from '@/shared/types/types';
-import { format, parseISO, isToday, differenceInCalendarDays } from 'date-fns';
+import { format, parseISO, differenceInCalendarDays } from 'date-fns';
 import { BookOpen, CalendarClock, FileText, X } from 'lucide-react';
+import {
+  getCountdownBadge,
+  getModalHeroClass,
+} from './dashboardUtils';
 
 interface Props {
   deadline: Deadline | null;
@@ -29,17 +33,8 @@ const DeadlineDetailModal: React.FC<Props> = ({ deadline, courses, onClose }) =>
   const date = parseISO(deadline.date);
   const daysLeft = differenceInCalendarDays(date, new Date());
   const description = deadline.description?.trim() || '';
-
-  const countdown =
-    daysLeft === 0
-      ? 'Due today'
-      : daysLeft === 1
-        ? 'Due tomorrow'
-        : daysLeft > 0 && daysLeft <= 14
-          ? `${daysLeft} days left`
-          : daysLeft < 0
-            ? 'Past deadline'
-            : null;
+  const countdown = getCountdownBadge(daysLeft);
+  const heroClass = getModalHeroClass(daysLeft);
 
   return (
     <div
@@ -54,7 +49,7 @@ const DeadlineDetailModal: React.FC<Props> = ({ deadline, courses, onClose }) =>
         onClick={(e) => e.stopPropagation()}
       >
         {/* Date hero */}
-        <div className="relative bg-indigo-600 px-5 pt-5 pb-6 text-white">
+        <div className={`relative px-5 pt-5 pb-6 text-white ${heroClass}`}>
           <button
             type="button"
             onClick={onClose}
@@ -78,7 +73,7 @@ const DeadlineDetailModal: React.FC<Props> = ({ deadline, courses, onClose }) =>
             </div>
 
             <div className="flex-1 min-w-0 pb-0.5">
-              <span className="inline-flex text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/20">
+              <span className="inline-flex text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md bg-white/20 ring-1 ring-white/30 text-white">
                 {deadline.type}
               </span>
               <h3
@@ -88,7 +83,14 @@ const DeadlineDetailModal: React.FC<Props> = ({ deadline, courses, onClose }) =>
                 {deadline.title}
               </h3>
               {countdown && (
-                <p className="text-xs font-semibold mt-2 text-indigo-100">{countdown}</p>
+                <span className="inline-flex mt-2.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-white/25 text-white ring-1 ring-white/35 backdrop-blur-sm">
+                  {countdown.label}
+                </span>
+              )}
+              {!countdown && daysLeft < 0 && (
+                <span className="inline-flex mt-2.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-white/20 text-white/90 ring-1 ring-white/25">
+                  Past deadline
+                </span>
               )}
             </div>
           </div>
