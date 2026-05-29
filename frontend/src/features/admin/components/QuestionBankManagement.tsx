@@ -416,8 +416,17 @@ const QuestionBankManagement: React.FC = () => {
                     </Typography>
                   </Box>
 
-                  <Stack direction="row" spacing={0.75} sx={{ flexShrink: 0, display: { xs: 'none', sm: 'flex' } }}>
-                    <Button size="small" variant="outlined" endIcon={<OpenInNewOutlined />} onClick={() => window.open(item.pdf_url, '_blank')} sx={{ borderRadius: 2, fontWeight: 800 }}>
+                  <Stack direction="row" spacing={0.75} sx={{ flexShrink: 0 }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      endIcon={<OpenInNewOutlined />}
+                      component="a"
+                      href={item.pdf_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ borderRadius: 2, fontWeight: 800 }}
+                    >
                       Open
                     </Button>
                   </Stack>

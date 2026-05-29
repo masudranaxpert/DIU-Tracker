@@ -161,11 +161,20 @@ def purge_batch_database(db: Session, batch_id: str) -> dict[str, int]:
             synchronize_session=False
         )
     )
-    # CR accounts stay; they go back to pending approval (not deleted or unlinked)
+    # CR accounts stay but go back to pending approval and lose their batch/section
+    # link so they must re-apply with fresh details.
     stats["crs_set_pending"] = (
         db.query(models.User)
         .filter(models.User.batch_id == batch_id, models.User.is_cr.is_(True))
-        .update({models.User.is_active: False}, synchronize_session=False)
+        .update(
+            {
+                models.User.is_active: False,
+                models.User.batch_id: None,
+                models.User.section: None,
+                models.User.sub_section: None,
+            },
+            synchronize_session=False,
+        )
     )
     db.commit()
     return stats

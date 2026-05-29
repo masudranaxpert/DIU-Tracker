@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { Course, AcademicRecord, EntryType, Section, Deadline } from '@/shared/types/types';
 import { SECTIONS } from '@/shared/utils/constants';
-import { Plus, Trash2, CheckCircle2, MapPin, Clock, GraduationCap, AlertCircle, Link, Edit2, X, Upload, Loader2, PlusCircle, Bell, Users, LayoutDashboard, Calendar, FileText, Sparkles, ChevronRight, Save, BookOpen, User, Flag, ShieldAlert, Search, Info, Facebook, MessageCircle, Send, Bot, Tag, Layers, UserSquare2, Building2, Phone, Mail, ExternalLink, FileQuestion } from 'lucide-react';
+import { Plus, Trash2, CheckCircle2, MapPin, Clock, GraduationCap, AlertCircle, Link, Edit2, X, Upload, Loader2, PlusCircle, Bell, Users, LayoutDashboard, Calendar, FileText, Sparkles, ChevronRight, Save, BookOpen, User, Flag, ShieldAlert, Search, Info, Facebook, MessageCircle, Send, Bot, Tag, Layers, UserSquare2, Building2, Phone, Mail, ExternalLink } from 'lucide-react';
 import NativeSelect from './NativeSelect';
 import CustomDatePicker from './CustomDatePicker';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +24,6 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import StudentManagementView from './StudentManagementView';
-import QuestionBankView from './QuestionBankView';
 
 interface Props {
   courses: Course[];
@@ -50,7 +49,7 @@ interface Props {
 }
 
 
-type AdminTab = 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE' | 'STUDENTS' | 'QBANK';
+type AdminTab = 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE' | 'STUDENTS';
 
 const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, section, batchId, onAddRecord, onUpdateRecord, onDeleteRecord, onAddCourse, onUpdateCourse, onDeleteCourse, onAddNotice, onUpdateNotice, onDeleteNotice, onAddDeadline, onUpdateDeadline, onDeleteDeadline, initialTab, onTabChange }) => {
 
@@ -885,7 +884,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
               { id: 'ACADEMIC', label: 'Records', icon: <PlusCircle size={18} /> },
               { id: 'COURSES', label: 'Courses', icon: <BookOpen size={18} /> },
               { id: 'GROUPS', label: 'Groups', icon: <Users size={18} /> },
-              { id: 'QBANK', label: 'Question Bank', icon: <FileQuestion size={18} /> },
               { id: 'NOTICES', label: 'Notices', icon: <Bell size={18} /> },
               { id: 'DEADLINES', label: 'Deadlines', icon: <Flag size={18} /> },
               { id: 'STUDENTS', label: 'Students', icon: <Users size={18} /> },
@@ -918,7 +916,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                 {activeTab === 'ACADEMIC' && <PlusCircle size={20} className="text-emerald-500" />}
                 {activeTab === 'COURSES' && <BookOpen size={20} className="text-blue-500" />}
                 {activeTab === 'GROUPS' && <Users size={20} className="text-violet-500" />}
-                {activeTab === 'QBANK' && <FileQuestion size={20} className="text-emerald-500" />}
                 {activeTab === 'NOTICES' && <Bell size={20} className="text-amber-500" />}
                 {activeTab === 'DEADLINES' && <Flag size={20} className="text-rose-500" />}
                 {activeTab === 'STUDENTS' && <Users size={20} className="text-indigo-500" />}
@@ -929,7 +926,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                 {activeTab === 'ACADEMIC' && 'Records'}
                 {activeTab === 'COURSES' && 'Courses'}
                 {activeTab === 'GROUPS' && 'Groups'}
-                {activeTab === 'QBANK' && 'Question Bank'}
                 {activeTab === 'NOTICES' && 'Notice Board'}
                 {activeTab === 'DEADLINES' && 'Deadlines'}
                 {activeTab === 'STUDENTS' && 'Student Management'}
@@ -949,7 +945,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                     { id: 'ACADEMIC', label: 'Records', icon: <PlusCircle size={16} />, color: 'text-emerald-500' },
                     { id: 'COURSES', label: 'Course ', icon: <BookOpen size={16} />, color: 'text-blue-500' },
                     { id: 'GROUPS', label: 'Groups ', icon: <Users size={16} />, color: 'text-violet-500' },
-                    { id: 'QBANK', label: 'Question Bank', icon: <FileQuestion size={16} />, color: 'text-emerald-500' },
                     { id: 'NOTICES', label: 'Notice Board ', icon: <Bell size={16} />, color: 'text-amber-500' },
                     { id: 'DEADLINES', label: 'Deadlines ', icon: <Flag size={16} />, color: 'text-rose-500' },
                     { id: 'STUDENTS', label: 'Students ', icon: <Users size={16} />, color: 'text-indigo-500' },
@@ -991,7 +986,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
               {activeTab === 'ACADEMIC' && 'Records'}
               {activeTab === 'COURSES' && 'Courses'}
               {activeTab === 'GROUPS' && 'Groups'}
-              {activeTab === 'QBANK' && 'Question Bank'}
               {activeTab === 'NOTICES' && 'Notice Board'}
               {activeTab === 'DEADLINES' && 'Deadlines'}
               {activeTab === 'STUDENTS' && 'Students'}
@@ -2406,8 +2400,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
             </div>
           </div>
         )}
-
-        {activeTab === 'QBANK' && <QuestionBankView />}
 
         {activeTab === 'STUDENTS' && (
           <StudentManagementView batchId={batchId} section={section} />

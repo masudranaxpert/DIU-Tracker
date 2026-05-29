@@ -135,7 +135,11 @@ def refresh_account(
     return s.RcloneAccountResponse(**account_to_response(row))
 
 
-@router.patch("/accounts/{account_id}", response_model=s.RcloneAccountResponse)
+@router.api_route(
+    "/accounts/{account_id}",
+    methods=["PATCH", "PUT"],
+    response_model=s.RcloneAccountResponse,
+)
 def update_account(
     account_id: str,
     body: s.RcloneAccountPatch,
@@ -154,6 +158,7 @@ def remove_account(
     db: Session = Depends(get_db),
     _admin=Depends(get_current_admin),
 ):
-    if not delete_account(db, account_id):
-        raise HTTPException(status_code=404, detail="Account not found")
+    # Idempotent: a missing row is already in the desired (deleted) state, so
+    # stale UI rows don't surface a confusing 404.
+    delete_account(db, account_id)
     return {"message": "Account deleted"}
