@@ -2,11 +2,22 @@ import uuid
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Integer
+from sqlalchemy import String as _String
+from sqlalchemy import Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from fastapi_users.db import SQLAlchemyBaseUserTable
 
 from database import Base
+
+# Default VARCHAR length so the schema is valid on MySQL/MariaDB (which require
+# one); SQLite ignores it. Use Text for long content (descriptions, tokens, etc.).
+DEFAULT_STRING_LENGTH = 255
+
+
+class String(_String):
+    def __init__(self, length: Optional[int] = None, *args, **kwargs):
+        super().__init__(length or DEFAULT_STRING_LENGTH, *args, **kwargs)
 
 
 def generate_uuid() -> str:

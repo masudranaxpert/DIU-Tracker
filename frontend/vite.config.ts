@@ -22,19 +22,16 @@ export default defineConfig(({ mode }) => {
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
       build: {
-        chunkSizeWarningLimit: 900,
+        chunkSizeWarningLimit: 1400,
         rollupOptions: {
           output: {
-            // Split big vendors into cacheable chunks so the initial bundle loads faster.
+            // Only the heavy, lazily-imported export libs get their own chunk.
+            // Everything else (React + all React-consuming libs) stays in one
+            // `vendor` chunk so React's module init order is never split.
             manualChunks(id) {
               if (!id.includes('node_modules')) return undefined;
-              if (id.includes('@mui') || id.includes('@emotion')) return 'vendor-mui';
-              if (/[\\/]react(?:-dom)?[\\/]|react-router|scheduler/.test(id)) return 'vendor-react';
               if (id.includes('xlsx')) return 'vendor-xlsx';
               if (id.includes('jspdf') || id.includes('html2canvas') || id.includes('dompurify')) return 'vendor-pdf';
-              if (id.includes('framer-motion')) return 'vendor-motion';
-              if (id.includes('lucide-react')) return 'vendor-icons';
-              if (id.includes('date-fns')) return 'vendor-date';
               return 'vendor';
             },
           },
