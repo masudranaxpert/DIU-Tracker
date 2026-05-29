@@ -2,22 +2,23 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Autocomplete,
   Box,
-  Chip,
   CircularProgress,
   IconButton,
   TextField,
   Tooltip,
 } from '@mui/material';
 import {
+  CheckCircle2,
   Download,
   Layers,
   Loader2,
   Plus,
   Save,
   Shuffle,
+  Sparkles,
   Trash2,
   Upload,
-  UserPlus,
+  UserCheck,
   Users,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -36,6 +37,7 @@ import {
   mergeSubSectionGroups,
   normalizeCourseGroups,
 } from '@/shared/lib/groupUtils';
+import { initials, gradientFor } from '@/shared/lib/avatar';
 
 interface Props {
   courses: Course[];
@@ -339,31 +341,53 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
     return ids;
   }, [activeCourseGroups, groupTargetSub]);
 
+  const selectedCourse = courseOptions.find((c) => c.id === selectedCourseId);
+  const assignedCount = assignedIds.size;
+  const unassignedCount = Math.max(subRoster.length - assignedCount, 0);
+  const filledGroups = activeCourseGroups.filter(
+    (g) =>
+      g.sub_section === groupTargetSub &&
+      getGroupMembers(g).some((m) => m.student_id || m.name)
+  ).length;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="rounded-[2rem] border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-50/80 via-white to-violet-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-indigo-950/30 p-6 lg:p-8 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+      {/* Hero header */}
+      <div className="relative overflow-hidden rounded-[2rem] lg:rounded-[2.5rem] border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 lg:p-8 text-white shadow-xl shadow-indigo-900/20">
+        <div className="absolute -top-16 -right-12 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-1/4 w-44 h-44 bg-violet-400/20 rounded-full blur-2xl" />
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg">
+            <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center">
               <Users size={26} />
             </div>
             <div>
-              <h2 className="text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">
+              <h2 className="text-lg lg:text-xl font-black uppercase tracking-tight">
                 Lab Group Manager
               </h2>
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">
-                Section {section} • Random distribute • Excel • Autocomplete
+              <p className="text-[10px] font-bold text-indigo-100/90 uppercase tracking-widest mt-1">
+                Section {section} • Random • Excel • Autocomplete
               </p>
             </div>
           </div>
-          {isSuccess && (
-            <Chip
-              label="Saved successfully"
-              color="success"
-              size="small"
-              sx={{ fontWeight: 800, fontSize: '0.65rem' }}
-            />
+          {selectedCourseId && (
+            <div className="grid grid-cols-3 gap-2.5 w-full lg:w-auto lg:min-w-[320px]">
+              {[
+                { label: 'Filled', val: `${filledGroups}/${GROUP_COUNT}` },
+                { label: 'Assigned', val: assignedCount },
+                { label: 'Left', val: unassignedCount },
+              ].map((s) => (
+                <div
+                  key={s.label}
+                  className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2.5 text-center"
+                >
+                  <p className="text-lg font-black leading-none">{s.val}</p>
+                  <p className="text-[8px] font-black uppercase tracking-widest text-indigo-200 mt-1">
+                    {s.label}
+                  </p>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>
@@ -404,27 +428,51 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
         </div>
       </div>
 
+      {!selectedCourseId && (
+        <div className="flex flex-col items-center justify-center py-20 text-center rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30">
+          <div className="w-16 h-16 rounded-3xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center mb-4">
+            <Layers size={30} />
+          </div>
+          <h3 className="text-xs font-black text-slate-500 dark:text-slate-300 uppercase tracking-widest">
+            Select a lab course to begin
+          </h3>
+          <p className="text-[10px] font-medium text-slate-400 mt-1.5 max-w-xs">
+            Choose a course above, then randomly distribute or manually assign students into 5 groups.
+          </p>
+        </div>
+      )}
+
       {selectedCourseId && (
         <>
-          {/* Action bar */}
-          <div className="flex flex-wrap gap-3 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700">
-            <Tooltip title="Shuffle section students evenly into 5 groups">
+          {/* Sticky action bar */}
+          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm">
+            <Tooltip title={`Shuffle ${section}${groupTargetSub} students evenly into 5 groups`}>
               <button
                 type="button"
                 onClick={handleRandomDistribute}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-md"
+                className="inline-flex items-center gap-2 px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-colors shadow-md cursor-pointer"
               >
-                <Shuffle size={16} /> Random Distribute
+                <Shuffle size={16} /> Random
               </button>
             </Tooltip>
             <button
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-md"
+              className={`inline-flex items-center gap-2 px-5 py-3 font-black rounded-xl text-[10px] uppercase tracking-widest transition-colors shadow-md cursor-pointer ${
+                isSuccess
+                  ? 'bg-emerald-600 text-white'
+                  : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white'
+              }`}
             >
-              {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-              Save Groups
+              {isSaving ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : isSuccess ? (
+                <CheckCircle2 size={16} />
+              ) : (
+                <Save size={16} />
+              )}
+              {isSuccess ? 'Saved' : 'Save Groups'}
             </button>
             <input
               type="file"
@@ -436,19 +484,20 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 border border-emerald-600/20 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 border border-emerald-600/20 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-colors cursor-pointer"
             >
-              <Upload size={16} /> Import Excel
+              <Upload size={16} /> Import
             </button>
             <button
               type="button"
               onClick={handleDownloadFormat}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
-              <Download size={16} /> Export Template
+              <Download size={16} /> Template
             </button>
-            <span className="ml-auto self-center text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-              {subRoster.length} students in {section}{groupTargetSub}
+            <span className="ml-auto self-center inline-flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
+              <UserCheck size={13} className="text-indigo-500" />
+              {selectedCourse?.code} • {subRoster.length} in {section}{groupTargetSub}
             </span>
           </div>
 
@@ -476,34 +525,44 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
                     ? members
                     : [{ id: '', student_id: '', name: '' }];
 
+                const filledCount = members.filter((m) => m.student_id || m.name).length;
                 return (
                   <div
                     key={gNum}
-                    className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 p-4 shadow-sm hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors"
+                    className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/60 shadow-sm hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg transition-all overflow-hidden flex flex-col"
                   >
-                    <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <span className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 flex items-center justify-center text-xs font-black">
+                    <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-r from-indigo-50 to-violet-50 dark:from-slate-800 dark:to-slate-800 border-b border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-700 text-white flex items-center justify-center text-xs font-black shadow-md shadow-indigo-600/20">
                           G{gNum}
                         </span>
-                        <span className="text-[10px] font-black text-slate-500 uppercase">
+                        <span className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">
                           Group {gNum}
                         </span>
                       </div>
-                      <Chip
-                        label={`${members.filter((m) => m.student_id || m.name).length}`}
-                        size="small"
-                        sx={{ height: 22, fontSize: '0.65rem', fontWeight: 900 }}
-                      />
+                      <span className="px-2.5 py-1 bg-white/70 dark:bg-slate-900/60 rounded-lg text-[9px] font-black text-indigo-600 dark:text-indigo-300 uppercase">
+                        {filledCount}
+                      </span>
                     </div>
 
-                    <div className="space-y-3">
-                      {displayMembers.map((member, mIdx) => (
+                    <div className="p-3 space-y-2.5 flex-1">
+                      {displayMembers.map((member, mIdx) => {
+                        const hasName = !!member.name;
+                        return (
                         <Box
                           key={`${gNum}-${mIdx}`}
                           className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800"
                         >
-                          <div className="flex items-start gap-1">
+                          <div className="flex items-start gap-2">
+                            <div
+                              className={`w-9 h-9 mt-0.5 rounded-xl flex items-center justify-center shrink-0 text-white text-[10px] font-black shadow-sm ${
+                                hasName
+                                  ? `bg-gradient-to-br ${gradientFor(member.student_id || member.name)}`
+                                  : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                              }`}
+                            >
+                              {hasName ? initials(member.name) : mIdx + 1}
+                            </div>
                             <div className="flex-1 space-y-2 min-w-0">
                               <TextField
                                 size="small"
@@ -577,11 +636,12 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
                             )}
                           </div>
                         </Box>
-                      ))}
+                      );
+                      })}
                       <button
                         type="button"
                         onClick={() => addMemberSlot(groupTargetSub, gNum)}
-                        className="w-full py-2 flex items-center justify-center gap-1.5 text-[9px] font-black text-indigo-500 uppercase tracking-widest rounded-xl border border-dashed border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors"
+                        className="w-full py-2 flex items-center justify-center gap-1.5 text-[9px] font-black text-indigo-500 uppercase tracking-widest rounded-xl border border-dashed border-indigo-200 dark:border-indigo-800 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 transition-colors cursor-pointer"
                       >
                         <Plus size={12} /> Add member
                       </button>
@@ -592,13 +652,13 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
             </div>
           )}
 
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40">
-            <UserPlus size={18} className="text-amber-600 shrink-0 mt-0.5" />
-            <p className="text-[10px] font-medium text-amber-800 dark:text-amber-200 leading-relaxed">
-              Students see group lists under <strong>Groups</strong> in the section menu after
-              unlocking with the section PIN. Use <strong>Random Distribute</strong> to split{' '}
-              {section}
-              {groupTargetSub} students evenly across all 5 groups, then save.
+          <div className="flex items-start gap-3 p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
+            <Sparkles size={18} className="text-indigo-500 shrink-0 mt-0.5" />
+            <p className="text-[10px] font-medium text-indigo-900 dark:text-indigo-200 leading-relaxed">
+              Students view these lists under <strong>Group List</strong> in the section menu after
+              unlocking with the section PIN. Tap <strong>Random</strong> to split {section}
+              {groupTargetSub}&apos;s {subRoster.length} students evenly across all 5 groups, tweak with
+              the name search, then <strong>Save</strong>.
             </p>
           </div>
         </>
