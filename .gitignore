@@ -1,0 +1,50 @@
+# --- Dependencies ---
+node_modules/
+
+# --- Build output ---
+dist/
+frontend/dist/
+.vite/
+frontend/.vite/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# --- Local databases (use MariaDB via docker-compose instead) ---
+*.db
+*.sqlite3
+backend/diu_tracker.db
+
+# --- User uploads (runtime data) ---
+backend/uploads/
+
+# --- Local env / secrets ---
+.env
+.env.local
+.env.*.local
+backend/.env
+frontend/.env.local
+
+# --- Docker local overrides ---
+docker-compose.override.yml
+
+# --- Mobile build artifacts ---
+frontend/android/
+
+# --- Editor / AI tooling (do not publish) ---
+.cursor/
+.puku/
+.idea/
+.vscode/
+
+# --- OS / logs ---
+.DS_Store
+Thumbs.db
+*.log

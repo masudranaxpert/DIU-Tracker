@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+
+<head>
+
+    <!-- Primary SEO -->
+    <title>DIU Tracker - Your personal assistant: Notes, Routine, Resources & Deadlines</title>
+
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="description"
+        content="DIU Tracker helps Daffodil International University students manage class routines, notes, question banks, lab evaluations, and academic resources. Keep track of deadlines and get personalized academic assistance." />
+    <meta name="keywords"
+        content="DIU Tracker, DIU CGPA Calculator, DIU Notes, DIU Routine, DIU CSE, Daffodil International University, DIU Question Bank" />
+    <meta name="author" content="DIU Tracker Team" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://diutracker.com/" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/logo.png" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="DIU Tracker - Daffodil International University Student Platform" />
+    <meta property="og:description"
+        content="Calculate CGPA, access notes, routines, question banks, and academic tools for DIU students." />
+    <meta property="og:image" content="https://diutracker.com/logo.png" />
+    <meta property="og:url" content="https://diutracker.com/" />
+    <meta property="og:site_name" content="DIU Tracker" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="DIU Tracker - Academic Assistant for DIU Students" />
+    <meta name="twitter:description" content="Manage your academic life at DIU with routines, notes, and question banks." />
+    <meta name="twitter:image" content="https://diutracker.com/logo.png" />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#4f46e5" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "DIU Tracker",
+      "url": "https://diutracker.com/",
+      "description": "Academic platform for Daffodil International University students featuring routines, notes, and question banks.",
+      "applicationCategory": "EducationalApplication",
+      "operatingSystem": "Web, Android",
+      "author": {
+        "@type": "Organization",
+        "name": "DIU Tracker Team"
+      },
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
+    <!-- Security Headers -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+        font-src 'self' https://fonts.gstatic.com;
+        img-src 'self' data: https: http://127.0.0.1:8000 http://localhost:8000;
+        media-src 'self' https://drive.google.com https://*.googleusercontent.com;
+        connect-src 'self' http://localhost:8000 http://127.0.0.1:8000 https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://api.codetabs.com https://corsproxy.io https://api.allorigins.win https://*.vercel-storage.com;
+        frame-src 'self' https: https://docs.google.com;
+    ">
+
+    <meta http-equiv="X-Content-Type-Options" content="nosniff">
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+
+    <style>
+        body {
+            font-family: 'Roboto', system-ui, sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Premium Background Animation */
+        .bg-mesh {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background:
+                radial-gradient(circle at 0% 0%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.08) 0%, transparent 50%);
+            animation: meshMove 20s ease-in-out infinite alternate;
+        }
+
+        @keyframes meshMove {
+            0% {
+                filter: hue-rotate(0deg);
+            }
+
+            100% {
+                filter: hue-rotate(30deg);
+            }
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+        }
+
+        /* Dark mode font fixes */
+        .dark .text-slate-900 {
+            color: #f8fafc !important;
+        }
+
+        .dark .text-slate-800 {
+            color: #f1f5f9 !important;
+        }
+
+        .dark .text-slate-700 {
+            color: #e2e8f0 !important;
+        }
+    </style>
+    <link rel="stylesheet" href="/src/styles/index.css">
+</head>
+
+<body class="bg-slate-50 dark:bg-[#020617] text-slate-900 dark:text-slate-100 transition-colors duration-500">
+    <div class="bg-mesh"></div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

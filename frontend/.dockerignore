@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.vite/
+android/
+.env
+.env.*
+Dockerfile
+.dockerignore
+npm-debug.log*

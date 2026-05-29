@@ -1,0 +1,8 @@
+{
+  "name": "DIU CSE Academic Tracker",
+  "description": "A comprehensive academic management system for DIU CSE students to track daily classes, materials, and exam schedules with a calendar interface and AI-powered study assistance.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}

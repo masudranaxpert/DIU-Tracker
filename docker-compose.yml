@@ -1,0 +1,84 @@
+services:
+  db:
+    image: mariadb:11
+    container_name: tracker-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpass}
+      MARIADB_DATABASE: ${DB_NAME:-diu_tracker}
+      MARIADB_USER: ${DB_USER:-diu}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-diupass}
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./docker/mariadb/conf.d:/etc/mysql/conf.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    networks:
+      - app_net
+
+  phpmyadmin:
+    image: beeyev/phpmyadmin-lightweight:latest
+    container_name: tracker-phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "9936:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: "3306"
+      UPLOAD_LIMIT: 512M
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_net
+
+  backend:
+    build:
+      context: ./backend
+    container_name: tracker-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: mysql+pymysql://${DB_USER:-diu}:${DB_PASSWORD:-diupass}@db:3306/${DB_NAME:-diu_tracker}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:4444}
+      EMAIL_VERIFICATION_ENABLED: ${EMAIL_VERIFICATION_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+    # Backend is reachable only inside the compose network (via Caddy), not published.
+    expose:
+      - "8000"
+    volumes:
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app_net
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+    container_name: tracker-frontend
+    restart: unless-stopped
+    ports:
+      - "4444:80"
+    depends_on:
+      - backend
+    networks:
+      - app_net
+
+volumes:
+  db_data:
+  backend_uploads:
+
+networks:
+  app_net:
+    driver: bridge

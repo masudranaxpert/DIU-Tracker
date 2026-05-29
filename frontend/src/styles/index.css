@@ -1,0 +1,218 @@
+/* Command Center Pro+ - Master Design System */
+
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c4b5fd;
+  --color-brand-400: #a78bfa;
+  --color-brand-500: #8b5cf6;
+  --color-brand-600: #7c3aed;
+  --color-brand-700: #6d28d9;
+  --color-brand-800: #5b21b6;
+  --color-brand-900: #4c1d95;
+  --font-sans: "Roboto", system-ui, sans-serif;
+}
+
+@layer base {
+  :root {
+    --primary: 79 70 229;
+    /* indigo-600 */
+    --primary-glow: rgba(79, 70, 229, 0.15);
+    --surface-light: 248 250 252;
+    /* slate-50 */
+    --surface-dark: 2 6 23;
+    /* slate-950 */
+    --font-density: -0.025em;
+  }
+
+  html, body, #root {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  body {
+    @apply font-sans transition-colors duration-500 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100;
+    font-feature-settings: "kern" 1;
+    letter-spacing: var(--font-density);
+    position: relative;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Pointer on all interactive controls (Tailwind preflight resets button cursor) */
+  button:not(:disabled),
+  a[href],
+  select:not(:disabled),
+  summary,
+  [role="button"]:not([aria-disabled="true"]),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  input[type="checkbox"],
+  input[type="radio"],
+  label[for] {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  select:disabled,
+  input:disabled,
+  [aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+}
+
+@layer utilities {
+  .glass-pro {
+    @apply bg-white/95 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  }
+
+  .shadow-pro {
+    box-shadow:
+      0 20px 40px -15px rgba(0, 0, 0, 0.1),
+      0 0 30px rgba(79, 70, 229, 0.05);
+  }
+
+  .shadow-active {
+    box-shadow:
+      0 10px 25px -5px rgba(79, 70, 229, 0.4),
+      0 8px 10px -6px rgba(79, 70, 229, 0.4);
+  }
+
+  .active-glow {
+    @apply shadow-[0_0_30px_rgba(79,70,229,0.25)];
+  }
+
+  .premium-card {
+    @apply bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all duration-300;
+  }
+
+  .text-shadow-sm {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 dark:bg-slate-800 rounded-full hover:bg-indigo-500/50 transition-colors;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+}
+
+/* Modern Typography */
+h1,
+h2,
+h3,
+h4,
+h5 {
+  @apply font-black tracking-tight uppercase;
+}
+
+/* Auth Specifics */
+.auth-input {
+  @apply w-full pl-12 pr-4 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-black placeholder:text-[10px] placeholder:uppercase font-bold;
+}
+
+.auth-label {
+  @apply text-[11px] font-black text-slate-500 dark:text-slate-300 uppercase tracking-[0.2em] px-1 mb-2 block;
+}
+
+/* Interactive Toggles */
+.toggle-spring {
+  @apply transition-all duration-200 ease-out;
+}
+
+/* Grid Surfacing */
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.auth-card-mesh {
+  background: radial-gradient(circle at top left, rgba(79, 70, 229, 0.05), transparent),
+    radial-gradient(circle at bottom right, rgba(16, 185, 129, 0.05), transparent);
+}
+
+.premium-btn {
+  @apply relative overflow-hidden transition-all duration-300 active:scale-95;
+}
+
+.premium-btn::after {
+  content: "";
+  @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300;
+}
+
+.premium-btn:hover::after {
+  @apply opacity-100;
+}
+
+.glass {
+  @apply bg-white/95 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .interactive {
+    cursor: pointer;
+  }
+
+  .interactive:disabled,
+  .interactive[aria-disabled="true"] {
+    cursor: not-allowed;
+  }
+
+/* Base Safe Area Utilities */
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.mt-safe {
+  margin-top: env(safe-area-inset-top);
+}
+
+.mb-safe {
+  margin-bottom: env(safe-area-inset-bottom);
+}
