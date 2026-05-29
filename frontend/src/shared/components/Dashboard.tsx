@@ -4,7 +4,6 @@ import { isToday, isFuture, isBefore, parseISO, startOfToday } from 'date-fns';
 import QuickPreviewModal from './QuickPreviewModal';
 import NoticeBoard from './NoticeBoard';
 import DashboardHero from './dashboard/DashboardHero';
-import QuickLinks from './dashboard/QuickLinks';
 import TodaySchedule from './dashboard/TodaySchedule';
 import CourseColumns from './dashboard/CourseColumns';
 import DeadlinesPanel from './dashboard/DeadlinesPanel';
@@ -96,12 +95,6 @@ const Dashboard: React.FC<Props> = ({
         todayCount={todayCount}
         totalCredits={totalCredits}
         dueSoonCount={upcomingDeadlines.length}
-      />
-
-      <QuickLinks
-        courseCount={courses.length}
-        noticeCount={activeNotices.length}
-        onAction={onAction}
       />
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
