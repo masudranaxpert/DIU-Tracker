@@ -25,8 +25,8 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
             <Clock size={20} />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Deadlines</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Upcoming & history</p>
+            <h2 className="text-base font-semibold text-slate-900 dark:text-white">Deadlines</h2>
+            <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">Upcoming & history</p>
           </div>
         </div>
 
@@ -64,12 +64,12 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 group-hover:text-indigo-600 transition-colors">
+                        <p className="text-[15px] font-semibold text-slate-900 dark:text-white line-clamp-2 group-hover:text-indigo-600 transition-colors">
                           {deadline.title}
                         </p>
                         <div className="flex flex-wrap items-center gap-2 mt-1.5">
                           <span
-                            className={`text-[10px] font-bold text-white px-2 py-0.5 rounded uppercase ${color}`}
+                            className={`text-[11px] font-bold text-white px-2 py-0.5 rounded uppercase ${color}`}
                           >
                             {deadline.type}
                           </span>

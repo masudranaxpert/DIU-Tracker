@@ -369,22 +369,28 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
 
   const handleSubmitNotice = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newNotice.title.trim()) {
+      alert('Please enter a notice title.');
+      return;
+    }
     try {
       setIsSaving(true);
+      const payload = {
+        ...newNotice,
+        title: newNotice.title.trim(),
+        content: newNotice.content.trim(),
+        expires_at: newNotice.expires_at || undefined,
+      };
       if (editingNoticeId) {
         // Update existing notice
-        await onUpdateNotice?.(editingNoticeId, {
-          ...newNotice,
-          expires_at: newNotice.expires_at || undefined
-        });
+        await onUpdateNotice?.(editingNoticeId, payload);
         setEditingNoticeId(null);
       } else {
         // Add new notice
         await onAddNotice?.({
-          ...newNotice,
+          ...payload,
           batch_id: batchId,
           section: section,
-          expires_at: newNotice.expires_at || undefined
         });
       }
       setIsSuccess(true);
@@ -1111,12 +1117,11 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <label className="text-xs font-black text-slate-600 dark:text-slate-300 uppercase tracking-widest px-1 flex items-center gap-1.5">
-                      <FileText size={12} className="text-blue-500" /> Content
+                      <FileText size={12} className="text-blue-500" /> Description <span className="text-slate-400 font-semibold normal-case">(optional)</span>
                     </label>
                     <textarea
                       rows={5}
-                      required
-                      placeholder="Write the full announcement here…"
+                      placeholder="Add details if needed — title-only notices are fine"
                       className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:border-indigo-500 font-medium text-slate-900 dark:text-white resize-none text-base placeholder:text-slate-400 dark:placeholder:text-slate-500"
                       value={newNotice.content}
                       onChange={e => setNewNotice({ ...newNotice, content: e.target.value })}

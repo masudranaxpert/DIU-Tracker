@@ -30,13 +30,13 @@ const DashboardHero: React.FC<Props> = ({ section }) => {
             <TimeIcon size={26} />
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+            <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
               {getGreeting(now)} • Section {section}
             </p>
-            <h1 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight mt-0.5 truncate">
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-tight mt-0.5 truncate">
               {format(now, 'EEEE')}
             </h1>
-            <p className="text-[13px] font-medium text-slate-400 mt-0.5">
+            <p className="text-sm font-medium text-slate-400 mt-1">
               {format(now, 'MMMM d, yyyy')}
             </p>
           </div>

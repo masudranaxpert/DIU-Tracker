@@ -28,8 +28,14 @@ def get_notices(
     return query.order_by(models.Notice.created_at.desc()).all()
 
 
+def _normalize_content(value: Optional[str]) -> str:
+    return (value or "").strip()
+
+
 def create_notice(db: Session, notice: schemas.NoticeCreate):
-    db_notice = models.Notice(**notice.model_dump())
+    data = notice.model_dump()
+    data["content"] = _normalize_content(data.get("content"))
+    db_notice = models.Notice(**data)
     db.add(db_notice)
     db.commit()
     db.refresh(db_notice)
@@ -41,6 +47,8 @@ def update_notice(db: Session, notice_id: str, updates: schemas.NoticeUpdate):
     if not db_notice:
         return None
     for key, value in updates.model_dump(exclude_unset=True).items():
+        if key == "content":
+            value = _normalize_content(value)
         setattr(db_notice, key, value)
     db.commit()
     db.refresh(db_notice)

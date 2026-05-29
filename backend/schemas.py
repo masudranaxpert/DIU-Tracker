@@ -361,7 +361,7 @@ class NoticeBase(BaseModel):
     section: Optional[str] = None
     sub_section: Optional[str] = None
     title: str
-    content: str
+    content: str = ""
     priority: Optional[str] = "normal"
     expires_at: Optional[datetime] = None
 

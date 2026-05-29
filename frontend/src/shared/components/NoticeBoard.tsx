@@ -89,8 +89,8 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
                         <Bell size={20} />
                     </div>
                     <div>
-                        <h2 className="text-sm font-semibold text-slate-900 dark:text-white">Notice board</h2>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        <h2 className="text-base font-semibold text-slate-900 dark:text-white">Notice board</h2>
+                        <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
                             {activeNotices.length} active {activeNotices.length === 1 ? 'announcement' : 'announcements'}
                         </p>
                     </div>
@@ -146,12 +146,12 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
 
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-start justify-between gap-2">
-                                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white leading-snug line-clamp-2">
+                                            <h3 className="text-[15px] font-semibold normal-case text-slate-900 dark:text-white leading-snug line-clamp-2">
                                                 {notice.title}
                                             </h3>
                                             {!isLocked && (
                                                 <ChevronDown
-                                                    size={16}
+                                                    size={18}
                                                     className={`text-slate-400 shrink-0 mt-0.5 transition-transform duration-300 ${isExpanded ? 'rotate-180' : ''}`}
                                                 />
                                             )}
@@ -159,15 +159,15 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
 
                                         {/* meta row */}
                                         <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide ${p.chip}`}>
+                                            <span className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${p.chip}`}>
                                                 {p.label}
                                             </span>
                                             {courseCode && (
-                                                <span className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-indigo-600 dark:text-indigo-400">
-                                                    <BookOpen size={11} /> {courseCode}
+                                                <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                                                    <BookOpen size={12} /> {courseCode}
                                                 </span>
                                             )}
-                                            <span className="text-[11px] text-slate-400 tabular-nums">
+                                            <span className="text-xs text-slate-400 tabular-nums">
                                                 {format(parseISO(notice.created_at), 'MMM dd')}
                                             </span>
                                         </div>
@@ -179,7 +179,7 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
                                                     Locked — tap to unlock
                                                 </span>
                                             </div>
-                                        ) : (
+                                        ) : notice.content?.trim() ? (
                                             <AnimatePresence initial={false}>
                                                 {isExpanded ? (
                                                     <motion.p
@@ -188,17 +188,17 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
                                                         animate={{ height: 'auto', opacity: 1 }}
                                                         exit={{ height: 0, opacity: 0 }}
                                                         transition={{ duration: 0.2 }}
-                                                        className="text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed mt-2 whitespace-pre-wrap overflow-hidden"
+                                                        className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed mt-2 whitespace-pre-wrap overflow-hidden"
                                                     >
                                                         {notice.content}
                                                     </motion.p>
                                                 ) : (
-                                                    <p className="text-[13px] text-slate-500 dark:text-slate-400 leading-relaxed mt-1.5 line-clamp-1">
+                                                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-1.5 line-clamp-1">
                                                         {notice.content}
                                                     </p>
                                                 )}
                                             </AnimatePresence>
-                                        )}
+                                        ) : null}
 
                                         {courseName && isExpanded && !isLocked && (
                                             <p className="text-[11px] text-slate-400 mt-2 truncate">{courseName}</p>

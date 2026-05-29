@@ -132,7 +132,9 @@ const NoticesManagement: React.FC<NoticesManagementProps> = ({ onRefresh }) => {
                       secondary={
                         <Box sx={{ display: 'flex', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                           <Typography variant="caption" color="text.secondary">
-                            {notice.content.substring(0, 50)}...
+                            {notice.content?.trim()
+                              ? `${notice.content.substring(0, 50)}${notice.content.length > 50 ? '…' : ''}`
+                              : '—'}
                           </Typography>
                           {notice.batch_id && (
                             <Chip label={getBatchName(notice.batch_id)} size="small" sx={{ height: 20 }} />

@@ -264,7 +264,7 @@ const NoticesView: React.FC<Props> = ({ notices, courses, onDateSelect, batchId,
                                         </div>
 
                                         <AnimatePresence>
-                                            {isExpanded && (
+                                            {isExpanded && notice.content?.trim() && (
                                                 <motion.div
                                                     initial={{ height: 0, opacity: 0, marginTop: 0 }}
                                                     animate={{ height: 'auto', opacity: 1, marginTop: 16 }}

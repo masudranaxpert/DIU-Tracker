@@ -44,9 +44,9 @@ const CourseColumn: React.FC<ColumnProps> = ({
           <div className={`w-9 h-9 rounded-lg bg-slate-50 dark:bg-slate-800 flex items-center justify-center ${a.icon}`}>
             <Icon size={18} />
           </div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h3>
+          <h3 className="text-base font-semibold text-slate-900 dark:text-white">{title}</h3>
         </div>
-        <span className={`text-xs font-bold px-2.5 py-1 rounded-md tabular-nums ${a.badge}`}>
+        <span className={`text-sm font-bold px-2.5 py-1 rounded-md tabular-nums ${a.badge}`}>
           {courses.length}
         </span>
       </div>
@@ -71,14 +71,14 @@ const CourseColumn: React.FC<ColumnProps> = ({
                 <span className="text-sm leading-none mt-0.5 tabular-nums">{course.credit}</span>
               </div>
               <div className="min-w-0 flex-1">
-                <p className={`text-xs font-bold font-mono tracking-wide ${a.code}`}>
+                <p className={`text-sm font-bold font-mono tracking-wide ${a.code}`}>
                   {course.code}
                 </p>
-                <p className="text-sm lg:text-[15px] font-semibold text-slate-900 dark:text-white leading-snug mt-1 line-clamp-2">
+                <p className="text-[15px] lg:text-base font-semibold text-slate-900 dark:text-white leading-snug mt-1 line-clamp-2">
                   {course.name}
                 </p>
                 {course.teacher && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 truncate">
+                  <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-1 truncate">
                     {course.teacher}
                   </p>
                 )}
