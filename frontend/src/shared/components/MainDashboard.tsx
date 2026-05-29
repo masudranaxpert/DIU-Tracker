@@ -309,12 +309,13 @@ const MainDashboard: React.FC<Props> = ({
         const basePath = '/dashboard';
         const routeTab = newTab === 'dashboard' ? 'overview' : newTab;
 
-        navigate(`${basePath}/${routeTab}`);
+        // Always navigate to the tab root (strip sub-routes like /courses/:id).
+        navigate(`${basePath}/${routeTab}`, { replace: tab === routeTab && !!subId });
 
         setIsNotificationsOpen(false);
         setIsBatchSwitcherOpen(false);
         setIsSectionSwitcherOpen(false);
-    }, [navigate]);
+    }, [navigate, tab, subId]);
 
     const handleBatchChange = useCallback((batchId: string) => {
         console.log('[MainDashboard] handleBatchChange invoked for:', batchId);

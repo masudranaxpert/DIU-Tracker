@@ -975,10 +975,11 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-10 shadow-2xl relative min-h-[600px] flex flex-col">
+      <div className={`flex-1 bg-white dark:bg-slate-900 rounded-2xl lg:rounded-3xl p-4 sm:p-6 lg:p-10 shadow-2xl relative flex flex-col ${activeTab === 'STUDENTS' ? '' : 'min-h-[600px]'}`}>
 
 
-        {/* Top Header Row */}
+        {/* Top Header Row — hidden for Students (StudentManagementView has its own header) */}
+        {activeTab !== 'STUDENTS' && (
         <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 lg:mb-10 pb-6 border-b border-slate-100 dark:border-slate-800 gap-4">
           <div>
             <h1 className="text-xl lg:text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight leading-none">
@@ -988,7 +989,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
               {activeTab === 'GROUPS' && 'Groups'}
               {activeTab === 'NOTICES' && 'Notice Board'}
               {activeTab === 'DEADLINES' && 'Deadlines'}
-              {activeTab === 'STUDENTS' && 'Students'}
               {activeTab === 'PROFILE' && 'Settings'}
             </h1>
             <p className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Section {section} Control Center</p>
@@ -1002,6 +1002,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
             )}
           </div>
         </div>
+        )}
 
         {/* Dynamic Content */}
         <div className="flex-1">
@@ -1963,6 +1964,10 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
               </AnimatePresence>
             </div>
           )}
+
+          {activeTab === 'STUDENTS' && (
+            <StudentManagementView batchId={batchId} section={section} />
+          )}
         </div>
 
         {/* Universal Search Bar */}
@@ -2399,10 +2404,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
               })}
             </div>
           </div>
-        )}
-
-        {activeTab === 'STUDENTS' && (
-          <StudentManagementView batchId={batchId} section={section} />
         )}
 
         {/* File Size Error Modal */}

@@ -94,7 +94,11 @@ const RcloneManagement: React.FC = () => {
       }
       const data = await rcloneService.listAccounts(refresh, force);
       setAccounts(data);
-      if (data.length) writeRcloneAccountsCache(data);
+      if (data.length) {
+        writeRcloneAccountsCache(data);
+      } else {
+        clearRcloneAccountsCache();
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load accounts');
     } finally {
@@ -189,8 +193,10 @@ const RcloneManagement: React.FC = () => {
     if (!confirm('Delete this Google Drive account from the database?')) return;
     try {
       await rcloneService.deleteAccount(id);
+      clearRcloneAccountsCache();
+      setAccounts((prev) => prev.filter((a) => a.id !== id));
       setSuccess('Account removed.');
-      await load(false);
+      await load(true, true);
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Delete failed');
     }

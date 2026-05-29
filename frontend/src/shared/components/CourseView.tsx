@@ -69,9 +69,7 @@ const CourseView: React.FC<Props> = ({
   const [recordFilter, setRecordFilter] = useState<'ALL' | EntryType>('ALL');
 
   useEffect(() => {
-    if (subId !== undefined && subId !== activeCourseId) {
-      setActiveCourseId(subId);
-    }
+    setActiveCourseId(subId ?? null);
   }, [subId]);
 
   useEffect(() => {
