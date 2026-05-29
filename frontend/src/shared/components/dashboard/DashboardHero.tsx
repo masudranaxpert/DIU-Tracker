@@ -1,64 +1,56 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Activity, Clock, GraduationCap, Layers, LucideIcon } from 'lucide-react';
+import { Sunrise, Sun, Moon } from 'lucide-react';
 import { getGreeting } from './dashboardUtils';
-
-interface Stat {
-  label: string;
-  val: React.ReactNode;
-  icon: LucideIcon;
-}
 
 interface Props {
   section: string;
-  subLabel: string;
-  todayCount: number;
-  totalCredits: number;
-  dueSoonCount: number;
 }
 
-const DashboardHero: React.FC<Props> = ({
-  section,
-  subLabel,
-  todayCount,
-  totalCredits,
-  dueSoonCount,
-}) => {
-  const now = new Date();
-  const stats: Stat[] = [
-    { label: 'Today', val: todayCount, icon: Activity },
-    { label: 'Sub', val: subLabel, icon: Layers },
-    { label: 'Credits', val: totalCredits, icon: GraduationCap },
-    { label: 'Due Soon', val: dueSoonCount, icon: Clock },
-  ];
+const DashboardHero: React.FC<Props> = ({ section }) => {
+  const [now, setNow] = React.useState(new Date());
+
+  React.useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000 * 30);
+    return () => clearInterval(t);
+  }, []);
+
+  const hour = now.getHours();
+  const TimeIcon = hour < 12 ? Sunrise : hour < 17 ? Sun : Moon;
 
   return (
-    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 lg:p-6 tour-stats">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-1.5">
-            {getGreeting(now)} • Section {section}
-          </p>
-          <h1 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight">
-            {format(now, 'EEEE')}
-          </h1>
-          <p className="text-[13px] font-medium text-slate-400 mt-0.5">{format(now, 'MMMM d, yyyy')}</p>
+    <section className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 tour-stats">
+      {/* soft accent */}
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-indigo-50/80 via-transparent to-transparent dark:from-indigo-950/30" />
+      <div className="pointer-events-none absolute -top-12 -right-8 w-48 h-48 rounded-full bg-indigo-100/50 dark:bg-indigo-900/20 blur-3xl" />
+
+      <div className="relative flex items-center justify-between gap-4 p-5 lg:p-6">
+        <div className="flex items-center gap-4 min-w-0">
+          <div className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm shadow-indigo-600/20">
+            <TimeIcon size={26} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
+              {getGreeting(now)} • Section {section}
+            </p>
+            <h1 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight mt-0.5 truncate">
+              {format(now, 'EEEE')}
+            </h1>
+            <p className="text-[13px] font-medium text-slate-400 mt-0.5">
+              {format(now, 'MMMM d, yyyy')}
+            </p>
+          </div>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full lg:w-auto lg:min-w-[420px]">
-          {stats.map((item) => (
-            <div
-              key={item.label}
-              className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-3.5 py-2.5"
-            >
-              <div className="flex items-center gap-1.5 mb-1">
-                <item.icon size={13} className="text-slate-400" />
-                <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">
-                  {item.label}
-                </span>
-              </div>
-              <p className="text-lg font-bold text-slate-900 dark:text-white truncate tabular-nums">{item.val}</p>
-            </div>
-          ))}
+
+        {/* live clock */}
+        <div className="hidden sm:flex flex-col items-end text-right shrink-0">
+          <p className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white tabular-nums leading-none">
+            {format(now, 'h:mm')}
+            <span className="text-sm font-bold text-slate-400 ml-1">{format(now, 'a')}</span>
+          </p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-1.5">
+            {format(now, "'Week' w")}
+          </p>
         </div>
       </div>
     </section>

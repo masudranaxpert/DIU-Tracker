@@ -29,7 +29,6 @@ const Dashboard: React.FC<Props> = ({
   deadlines,
   onAction,
   onDateSelect,
-  userProfile,
   batchId,
   section,
 }) => {
@@ -43,11 +42,6 @@ const Dashboard: React.FC<Props> = ({
 
   const todayActivityRecords = React.useMemo(
     () => records.filter((r) => isToday(parseISO(r.date)) && r.type !== EntryType.MATERIAL),
-    [records]
-  );
-
-  const todayCount = React.useMemo(
-    () => records.filter((r) => isToday(parseISO(r.date))).length,
     [records]
   );
 
@@ -67,13 +61,8 @@ const Dashboard: React.FC<Props> = ({
     [deadlines]
   );
 
-  const totalCredits = courses.reduce((acc, c) => acc + (c.credit || 0), 0);
   const theoryCourses = courses.filter((c) => !isLabCourse(c.name));
   const labCourses = courses.filter((c) => isLabCourse(c.name));
-
-  const subLabel = userProfile?.sub_section
-    ? `${userProfile.section}${userProfile.sub_section}`
-    : 'Theory';
 
   return (
     <div className="space-y-6 pb-28">
@@ -89,13 +78,7 @@ const Dashboard: React.FC<Props> = ({
         }}
       />
 
-      <DashboardHero
-        section={section}
-        subLabel={subLabel}
-        todayCount={todayCount}
-        totalCredits={totalCredits}
-        dueSoonCount={upcomingDeadlines.length}
-      />
+      <DashboardHero section={section} />
 
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
         <div className="xl:col-span-8 space-y-6 lg:space-y-8">
