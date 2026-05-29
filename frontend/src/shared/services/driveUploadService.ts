@@ -1,6 +1,4 @@
 const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
-const DRIVE_STATUS_CACHE_KEY = 'dct_drive_status_v1';
-const STATUS_CACHE_MS = 5 * 60 * 1000;
 
 /** Browser → API (multipart). Rest is server → Google Drive (no byte events). */
 const PROGRESS_NETWORK_MAX = 38;
@@ -9,6 +7,7 @@ const PROGRESS_SERVER_MAX = 92;
 export interface DriveStatus {
   ready: boolean;
   active_accounts: number;
+  connected_accounts?: number;
   message: string | null;
 }
 
@@ -21,35 +20,6 @@ export interface DriveUploadResult {
 }
 
 export type DriveUploadPhase = 'sending' | 'drive' | 'finishing';
-
-type CachedStatus = { data: DriveStatus; cachedAt: number };
-
-function readStatusCache(): CachedStatus | null {
-  try {
-    const raw = localStorage.getItem(DRIVE_STATUS_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as CachedStatus;
-    if (Date.now() - parsed.cachedAt > STATUS_CACHE_MS) return null;
-    return parsed;
-  } catch {
-    return null;
-  }
-}
-
-function writeStatusCache(data: DriveStatus) {
-  try {
-    localStorage.setItem(
-      DRIVE_STATUS_CACHE_KEY,
-      JSON.stringify({ data, cachedAt: Date.now() } satisfies CachedStatus)
-    );
-  } catch {
-    /* ignore */
-  }
-}
-
-export function clearDriveStatusCache() {
-  localStorage.removeItem(DRIVE_STATUS_CACHE_KEY);
-}
 
 export function mapDriveErrorMessage(raw: string): string {
   const lower = raw.toLowerCase();
@@ -74,10 +44,11 @@ export function mapDriveErrorMessage(raw: string): string {
   return raw;
 }
 
-export async function fetchDriveStatus(options?: { bypassCache?: boolean }): Promise<DriveStatus> {
-  if (!options?.bypassCache) {
-    const cached = readStatusCache();
-    if (cached) return cached.data;
+export async function fetchDriveStatus(): Promise<DriveStatus> {
+  try {
+    localStorage.removeItem('dct_drive_status_v1');
+  } catch {
+    /* legacy cache cleanup */
   }
 
   const token = localStorage.getItem('auth_token');
@@ -88,9 +59,7 @@ export async function fetchDriveStatus(options?: { bypassCache?: boolean }): Pro
     const err = await res.json().catch(() => ({}));
     throw new Error(mapDriveErrorMessage(err.detail || 'Could not check Drive status'));
   }
-  const data: DriveStatus = await res.json();
-  writeStatusCache(data);
-  return data;
+  return res.json();
 }
 
 export function extractDriveFileId(urlOrId?: string | null): string | null {

@@ -38,13 +38,13 @@ import { adminCardSx, pageHeaderSx, pageTitleSx } from '@/shared/theme/adminStyl
 import { rcloneService, RcloneAccount } from '@/features/admin/services/rcloneService';
 import {
   clearRcloneAccountsCache,
-  readRcloneAccountsCache,
-  writeRcloneAccountsCache,
+  mergeQuotaIntoAccounts,
+  writeQuotaCache,
 } from '@/shared/lib/rcloneQuotaCache';
 
 function statusChip(status: string, hasRefresh: boolean) {
   if (status === 'connected' && hasRefresh) {
-    return <Chip size="small" color="success" icon={<CheckCircle />} label="Active" />;
+    return <Chip size="small" color="success" icon={<CheckCircle />} label="Connected" />;
   }
   if (status === 'expired') {
     return <Chip size="small" color="error" icon={<ErrorOutlined />} label="Re-setup" />;
@@ -85,18 +85,15 @@ const RcloneManagement: React.FC = () => {
     setRefreshing(true);
     setError(null);
     try {
-      if (!refresh && !force) {
-        const cached = readRcloneAccountsCache();
-        if (cached?.length) {
-          setAccounts(cached);
-          return;
-        }
-      }
+      // DB list every time (is_active, token). Google quota API only when refresh=true.
       const data = await rcloneService.listAccounts(refresh, force);
-      setAccounts(data);
-      if (data.length) {
-        writeRcloneAccountsCache(data);
-      } else {
+      const display = refresh || force ? data : mergeQuotaIntoAccounts(data);
+      setAccounts(display);
+
+      if (refresh || force) {
+        writeQuotaCache(data);
+      }
+      if (!data.length) {
         clearRcloneAccountsCache();
       }
     } catch (e: unknown) {
@@ -366,7 +363,7 @@ const RcloneManagement: React.FC = () => {
                         onChange={() => handleToggleActive(acc)}
                         disabled={acc.token_status !== 'connected'}
                       />
-                      <Typography variant="caption">Active</Typography>
+                      <Typography variant="caption">Use for uploads</Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 0.5 }}>
                       <Tooltip title="Refresh quota & token">

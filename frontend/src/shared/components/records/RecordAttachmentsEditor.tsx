@@ -90,11 +90,14 @@ const RecordAttachmentsEditor: React.FC<Props> = ({ attachments, onChange, onOve
     try {
       const s = await fetchDriveStatus();
       setDriveStatus(s);
-    } catch {
+    } catch (err: unknown) {
+      const detail = err instanceof Error ? err.message : '';
       setDriveStatus({
         ready: false,
         active_accounts: 0,
-        message: 'Could not verify file upload setup.',
+        message: detail.includes('Only CR')
+          ? 'File upload is only available when logged in as an approved CR account.'
+          : detail || 'Could not verify file upload setup.',
       });
     } finally {
       setStatusLoading(false);
@@ -247,7 +250,7 @@ const RecordAttachmentsEditor: React.FC<Props> = ({ attachments, onChange, onOve
       {needsDrive && !statusLoading && driveStatus && !driveStatus.ready && (
         <div className="flex gap-3 p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50">
           <CloudOff size={20} className="text-amber-600 shrink-0 mt-0.5" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-sm font-bold text-amber-900 dark:text-amber-200">File upload unavailable</p>
             <p className="text-xs text-amber-800/90 dark:text-amber-300/90 mt-1 leading-relaxed">
               {driveStatus.message ||
@@ -256,6 +259,13 @@ const RecordAttachmentsEditor: React.FC<Props> = ({ attachments, onChange, onOve
             <p className="text-[10px] font-bold text-amber-700/80 dark:text-amber-400/80 mt-2 uppercase tracking-wide">
               You can still use Link (URL) attachments
             </p>
+            <button
+              type="button"
+              onClick={() => refreshDriveStatus()}
+              className="mt-3 text-[10px] font-black uppercase tracking-widest text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+            >
+              Check again
+            </button>
           </div>
         </div>
       )}

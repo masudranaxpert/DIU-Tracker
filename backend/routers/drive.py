@@ -1,4 +1,6 @@
 """CR file uploads to Google Drive (rclone accounts)."""
+import json
+
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -6,6 +8,7 @@ from typing import Optional
 
 from auth.setup import fastapi_users
 from database import get_db
+import models
 from models import User
 from rclone.drive_files import MAX_UPLOAD_BYTES, friendly_drive_error, mime_to_attachment_type, upload_bytes_to_drive
 from rclone.storage import (
@@ -33,16 +36,54 @@ def drive_upload_status(
     _require_cr(user)
     ready = list_ready_active_accounts(db)
     if not ready:
+        connected = (
+            db.query(models.RcloneDriveAccount)
+            .filter(
+                models.RcloneDriveAccount.token_status == "connected",
+                models.RcloneDriveAccount.token_json.isnot(None),
+            )
+            .all()
+        )
+        with_refresh = [r for r in connected if _account_has_refresh(r)]
+        inactive = [r for r in with_refresh if not r.is_active]
+
+        if with_refresh and inactive and len(inactive) == len(with_refresh):
+            message = (
+                "Google Drive is connected but turned off. Ask your super admin to enable "
+                "the Active switch in Admin Panel → Rclone."
+            )
+        elif with_refresh:
+            message = (
+                "Google Drive needs attention. Ask your super admin to refresh the account "
+                "in Admin Panel → Rclone."
+            )
+        else:
+            message = (
+                "Google Drive is not configured. Please ask your super admin to set up Rclone "
+                "in the admin panel."
+            )
         return {
             "ready": False,
             "active_accounts": 0,
-            "message": "Google Drive is not configured. Please ask your super admin to set up Rclone in the admin panel.",
+            "connected_accounts": len(with_refresh),
+            "message": message,
         }
     return {
         "ready": True,
         "active_accounts": len(ready),
+        "connected_accounts": len(ready),
         "message": None,
     }
+
+
+def _account_has_refresh(row: models.RcloneDriveAccount) -> bool:
+    if not row.token_json:
+        return False
+    try:
+        token = json.loads(row.token_json)
+    except json.JSONDecodeError:
+        return False
+    return bool(token.get("refresh_token"))
 
 
 class StagedDeleteBody(BaseModel):
