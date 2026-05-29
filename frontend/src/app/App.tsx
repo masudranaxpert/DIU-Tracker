@@ -29,6 +29,8 @@ import GlobalDialog from '@/shared/components/GlobalDialog';
 import { initPushNotifications } from '@/shared/services/PushNotificationService';
 import { studentService } from '@/shared/services/studentService';
 import { authService } from '@/shared/services/authService';
+import { academicCalendarService } from '@/shared/services/academicCalendarService';
+import type { AcademicCalendarData } from '@/shared/lib/academicCalendarUtils';
 const App: React.FC = () => {
   useEffect(() => {
     // Using dynamic import to prevent build-time resolution errors on Vercel
@@ -59,6 +61,7 @@ const App: React.FC = () => {
   const [records, setRecords] = useState<AcademicRecord[]>([]);
   const [notices, setNotices] = useState<Notice[]>([]);
   const [deadlines, setDeadlines] = useState<Deadline[]>([]);
+  const [academicCalendar, setAcademicCalendar] = useState<AcademicCalendarData | null>(null);
   const [theme, setTheme] = useState<Theme>(() => {
     return (localStorage.getItem('theme') as Theme) || 'light';
   });
@@ -237,7 +240,11 @@ const App: React.FC = () => {
   }, [selectedBatch, selectedSection, selectedSubSection]);
 
   useEffect(() => {
-    if (selectedBatch) {
+    academicCalendarService.fetch().then(setAcademicCalendar);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedBatch) return;
       // 1. Optimistic Cache Load (Instant UI)
       try {
         const coursesKey = `diu_tracker_cache_courses_${JSON.stringify({ batchId: selectedBatch, section: selectedSection || undefined })}`;
@@ -261,7 +268,6 @@ const App: React.FC = () => {
       deadlineService.fetchDeadlines(selectedBatch, selectedSection || undefined, selectedSubSection || undefined).then(data => {
         setDeadlines(data);
       });
-    }
   }, [selectedBatch, selectedSection, selectedSubSection]);
 
   const notifications = useMemo(() => {
@@ -421,6 +427,7 @@ const App: React.FC = () => {
             setNotices={setNotices}
             deadlines={deadlines}
             setDeadlines={setDeadlines}
+            academicCalendar={academicCalendar}
             theme={theme}
             toggleTheme={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
             fontScale={fontScale}
@@ -464,6 +471,7 @@ const App: React.FC = () => {
             setNotices={setNotices}
             deadlines={deadlines}
             setDeadlines={setDeadlines}
+            academicCalendar={academicCalendar}
             theme={theme}
             toggleTheme={() => setTheme(prev => prev === 'light' ? 'dark' : 'light')}
             fontScale={fontScale}

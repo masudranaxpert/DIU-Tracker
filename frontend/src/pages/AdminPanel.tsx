@@ -12,6 +12,7 @@ import BatchesManagement from '@/features/admin/components/BatchesManagement';
 import FeedbackManagement from '@/features/admin/components/FeedbackManagement';
 import RcloneManagement from '@/features/admin/components/RcloneManagement';
 import QuestionBankManagement from '@/features/admin/components/QuestionBankManagement';
+import AcademicCalendarManagement from '@/features/admin/components/AcademicCalendarManagement';
 import { adminAuthService } from '@/features/admin/services/adminAuthService';
 import { useAdminTab } from '@/features/admin/hooks/useAdminTab';
 
@@ -71,6 +72,8 @@ const AdminPanel: React.FC = () => {
         return <FeedbackManagement />;
       case 'rclone':
         return <RcloneManagement />;
+      case 'academic_calendar':
+        return <AcademicCalendarManagement />;
       default:
         return <AdminDashboard />;
     }

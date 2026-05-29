@@ -13,6 +13,7 @@ from routers import (
     batches, users, courses, course_list, records, notices, deadlines, feedbacks,
     students, teachers, admin_auth, admin_portal, rclone, drive, user_auth, section_pins, uploads,
     qbank,
+    academic_calendar,
 )
 from commands import run_cli
 
@@ -68,6 +69,7 @@ app.include_router(admin_portal.router)
 app.include_router(qbank.router)
 app.include_router(rclone.router)
 app.include_router(drive.router)
+app.include_router(academic_calendar.router)
 
 ensure_upload_dirs()
 _avatars_dir = Path(__file__).resolve().parent / "uploads" / "avatars"

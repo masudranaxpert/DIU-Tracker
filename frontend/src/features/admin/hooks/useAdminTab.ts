@@ -11,6 +11,7 @@ export const ADMIN_TABS = [
   'batches',
   'feedback',
   'rclone',
+  'academic_calendar',
 ] as const;
 
 export type AdminTab = (typeof ADMIN_TABS)[number];

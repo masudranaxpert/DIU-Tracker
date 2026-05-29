@@ -31,6 +31,13 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AcademicRecord, Deadline, Course, Section } from '@/shared/types/types';
+import type { AcademicCalendarEvent } from '@/shared/lib/academicCalendarUtils';
+import {
+  ACADEMIC_EVENT_TYPE_LABELS,
+  eventOccursOnDay,
+  getAcademicEventStyle,
+  parseLocalCalendarDate,
+} from '@/shared/lib/academicCalendarUtils';
 // jspdf + autotable are heavy — load only when exporting a PDF.
 const loadPdfLibs = async (): Promise<{
   jsPDF: typeof import('jspdf').jsPDF;
@@ -64,6 +71,8 @@ interface CalendarViewProps {
   records: AcademicRecord[];
   deadlines: Deadline[];
   courses: Course[];
+  academicEvents?: AcademicCalendarEvent[];
+  onNavigateToAcademicCalendar?: () => void;
   selectedDate: Date;
   onDateSelect: (date: Date) => void;
   onAction: (type: string, id: string) => void;
@@ -109,9 +118,11 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   records,
   deadlines,
   courses,
+  academicEvents = [],
   selectedDate,
   onDateSelect,
-  onAction
+  onAction,
+  onNavigateToAcademicCalendar,
 }) => {
   const dialog = useDialogStore();
   const [currentDate, setCurrentDate] = useState(selectedDate);
@@ -130,7 +141,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   const getDayEvents = (day: Date) => {
     const dayRecords = records.filter(r => isSameDay(parseLocalDate(r.date), day));
     const dayDeadlines = deadlines.filter(d => isSameDay(parseLocalDate(d.date), day));
-    return { dayRecords, dayDeadlines };
+    const dayAcademic = academicEvents.filter(e => eventOccursOnDay(e, day));
+    return { dayRecords, dayDeadlines, dayAcademic };
   };
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
@@ -141,16 +153,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     onDateSelect(today);
   };
 
-  const selectedDayEvents = useMemo(() => getDayEvents(selectedDate), [selectedDate, records, deadlines]);
+  const selectedDayEvents = useMemo(() => getDayEvents(selectedDate), [selectedDate, records, deadlines, academicEvents]);
 
   const activeMonthDaysWithEvents = useMemo(() => {
     return calendarDays
       .filter(day => isSameMonth(day, monthStart))
       .filter(day => {
-        const { dayRecords, dayDeadlines } = getDayEvents(day);
-        return dayRecords.length > 0 || dayDeadlines.length > 0;
+        const { dayRecords, dayDeadlines, dayAcademic } = getDayEvents(day);
+        return dayRecords.length > 0 || dayDeadlines.length > 0 || dayAcademic.length > 0;
       });
-  }, [calendarDays, monthStart, records, deadlines]);
+  }, [calendarDays, monthStart, records, deadlines, academicEvents]);
 
   const handleExportPDF = async () => {
     const { jsPDF, autoTable } = await loadPdfLibs();
@@ -404,13 +416,14 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 className="grid grid-cols-7 gap-1 lg:gap-2"
               >
                 {calendarDays.map((day, idx) => {
-                  const { dayRecords, dayDeadlines } = getDayEvents(day);
+                  const { dayRecords, dayDeadlines, dayAcademic } = getDayEvents(day);
                   const isCurMonth = isSameMonth(day, monthStart);
                   const isSelected = isSameDay(day, selectedDate);
                   const isTodayDate = isToday(day);
                   const rowIdx = Math.floor(idx / 7);
                   const isZebra = rowIdx % 2 !== 0;
                   const hasResources = dayRecords.length > 0;
+                  const hasAcademic = dayAcademic.length > 0;
 
                   return (
                     <div
@@ -431,6 +444,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                           {format(day, 'd')}
                         </span>
 
+                        {hasAcademic && isCurMonth && (
+                          <div
+                            className="absolute top-0.5 right-0.5 w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-amber-400 border border-white dark:border-slate-900 shadow-sm shadow-amber-400/40"
+                            title="University academic calendar event"
+                          />
+                        )}
+
                         {hasResources && isCurMonth && (
                           <div className="flex items-center justify-center bg-indigo-600 text-white w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full shadow-sm shadow-indigo-500/20">
                             <span className="text-[5px] lg:text-[6px] font-black uppercase">
@@ -441,6 +461,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                       </div>
 
                       <div className="flex-1 flex flex-col justify-end gap-0.5 lg:gap-1 overflow-hidden">
+                        {dayAcademic.slice(0, 1).map(e => (
+                          <div
+                            key={e.id}
+                            className="px-0.5 lg:px-1 py-0.5 rounded-[2px] lg:rounded-[3px] text-[4.5px] sm:text-[5.5px] lg:text-[6.5px] font-black uppercase text-amber-950 truncate shadow-sm bg-gradient-to-br from-amber-300 to-amber-500"
+                            title={e.title}
+                          >
+                            {e.title}
+                          </div>
+                        ))}
+
                         {dayDeadlines.slice(0, 2).map(d => (
                           <div
                             key={d.id}
@@ -472,7 +502,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
               activeMonthDaysWithEvents.length > 0 ? (
                 <motion.div key="list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-2 lg:p-8 space-y-8 lg:space-y-12 max-w-4xl mx-auto">
                   {activeMonthDaysWithEvents.map((day) => {
-                    const { dayRecords, dayDeadlines } = getDayEvents(day);
+                    const { dayRecords, dayDeadlines, dayAcademic } = getDayEvents(day);
                     return (
                       <div key={day.toISOString()} className="flex gap-4 lg:gap-8 relative group/list">
                         <div className="absolute left-[1.1rem] lg:left-[1.5rem] top-8 bottom-0 w-[1px] bg-slate-100 dark:bg-slate-800" />
@@ -481,6 +511,15 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                           <span className={`text-xl lg:text-2xl font-black ${isToday(day) ? 'text-indigo-600' : 'text-slate-900 dark:text-white'}`}>{format(day, 'dd')}</span>
                         </div>
                         <div className="flex-1 space-y-3 lg:space-y-4">
+                          {dayAcademic.map(e => (
+                            <div key={e.id} className="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 shadow-sm">
+                              <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0 text-white text-[8px] font-black">U</div>
+                              <div className="flex-1">
+                                <span className="text-[6px] lg:text-[7px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">University Calendar</span>
+                                <h4 className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white leading-snug">{e.title}</h4>
+                              </div>
+                            </div>
+                          ))}
                           {dayDeadlines.map(d => (
                             <div key={d.id} className="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm">
                               <div className={`w-1 lg:w-1.5 h-6 lg:h-8 rounded-full bg-gradient-to-b ${DEADLINE_COLORS[d.type] || 'from-indigo-500 to-indigo-700'}`} />
@@ -557,6 +596,49 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         </div>
 
         <div className="flex-1 overflow-y-auto lg:overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-10 relative z-10">
+          {selectedDayEvents.dayAcademic.length > 0 && (
+            <section>
+              <div className="flex items-center justify-between mb-4 border-b border-amber-200 dark:border-amber-900/40 pb-2">
+                <h5 className="text-[8px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest">## University Calendar</h5>
+                <div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
+              </div>
+              <div className="space-y-3">
+                {selectedDayEvents.dayAcademic.map(event => {
+                  const style = getAcademicEventStyle(event.type);
+                  const start = parseLocalCalendarDate(event.start);
+                  const end = parseLocalCalendarDate(event.end || event.start);
+                  const isRange = event.end && event.end !== event.start;
+                  return (
+                    <div
+                      key={event.id}
+                      className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 shadow-sm"
+                    >
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest mb-2 ${style.chip}`}>
+                        {ACADEMIC_EVENT_TYPE_LABELS[event.type] || 'Academic'}
+                      </span>
+                      <h6 className="text-sm font-bold text-slate-900 dark:text-white leading-snug mb-1.5">{event.title}</h6>
+                      <p className="text-[9px] font-medium text-slate-500 dark:text-slate-400">
+                        {isRange
+                          ? `${format(start, 'MMM d')} – ${format(end, 'MMM d, yyyy')}`
+                          : format(start, 'MMM d, yyyy')}
+                        {event.semester ? ` · ${event.semester}` : ''}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+              {onNavigateToAcademicCalendar && (
+                <button
+                  type="button"
+                  onClick={onNavigateToAcademicCalendar}
+                  className="mt-3 w-full py-2.5 rounded-xl border border-amber-200 dark:border-amber-800 text-[9px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-300 hover:bg-amber-100/60 dark:hover:bg-amber-950/30 transition-colors cursor-pointer"
+                >
+                  View full academic calendar
+                </button>
+              )}
+            </section>
+          )}
+
           {selectedDayEvents.dayDeadlines.length > 0 && (
             <section>
               <div className="flex items-center justify-between mb-4 border-b border-slate-200 dark:border-slate-800 pb-2">

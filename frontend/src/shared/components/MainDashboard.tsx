@@ -53,6 +53,7 @@ import { noticeService } from '@/shared/services/noticeService';
 import { deadlineService } from '@/shared/services/deadlineService';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { studentService, StudentSession } from '@/shared/services/studentService';
+import type { AcademicCalendarData } from '@/shared/lib/academicCalendarUtils';
 
 interface Props {
     batches: Batch[];
@@ -78,6 +79,7 @@ interface Props {
     markAllAsRead: () => void;
     deadlines: Deadline[];
     setDeadlines: React.Dispatch<React.SetStateAction<Deadline[]>>;
+    academicCalendar?: AcademicCalendarData | null;
     initialTab?: 'dashboard' | 'calendar' | 'courses' | 'groups' | 'notices' | 'academic_year' | 'admin';
     isOffline?: boolean;
 }
@@ -124,6 +126,7 @@ const MainDashboard: React.FC<Props> = ({
     setNotices,
     deadlines,
     setDeadlines,
+    academicCalendar = null,
     isOffline = false
 }) => {
     const navigate = useNavigate();
@@ -375,7 +378,7 @@ const MainDashboard: React.FC<Props> = ({
                 { id: 'cr_profiles', icon: <UserCheck size={20} />, label: 'CR Profiles', color: 'text-violet-500', activeBg: 'bg-indigo-600' },
                 // Only show student profiles to logged in users
                 ...(userProfile ? [{ id: 'student_profiles', icon: <GraduationCap size={20} />, label: 'Student Profiles', color: 'text-violet-500', activeBg: 'bg-indigo-600' }] : []),
-                { id: 'academic_year', icon: <CalendarIcon size={20} />, label: 'Academic Year', color: 'text-violet-500', activeBg: 'bg-indigo-600' },
+                { id: 'academic_year', icon: <CalendarIcon size={20} />, label: 'Academic Calendar', color: 'text-violet-500', activeBg: 'bg-indigo-600' },
             ]
         },
         {
@@ -896,6 +899,7 @@ const MainDashboard: React.FC<Props> = ({
                                     records={records}
                                     courses={courses}
                                     deadlines={deadlines}
+                                    academicEvents={academicCalendar?.events || []}
                                     section={selectedSection!}
                                     batchId={selectedBatch!}
                                     selectedDate={selectedDate}
@@ -909,6 +913,7 @@ const MainDashboard: React.FC<Props> = ({
                                         setIsDayDetailOpen(open);
                                     }}
                                     onAction={handleAction}
+                                    onNavigateToAcademicCalendar={() => navigate('/dashboard/academic_year')}
                                 />
                             )}
                             {activeTab === 'courses' && (
@@ -958,7 +963,7 @@ const MainDashboard: React.FC<Props> = ({
                                 />
                             )}
                             {activeTab === 'academic_year' && (
-                                <AcademicYearView />
+                                <AcademicYearView calendar={academicCalendar} />
                             )}
                             {activeTab === 'student_profiles' && userProfile && (
                                 <StudentProfilesView

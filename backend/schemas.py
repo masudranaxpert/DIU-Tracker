@@ -621,3 +621,27 @@ class QbScrapeJobResponse(BaseModel):
     errors: List[str] = []
     started_at: Optional[str] = None
     finished_at: Optional[str] = None
+
+
+class AcademicCalendarEvent(BaseModel):
+    id: str
+    title: str
+    start: str
+    end: Optional[str] = None
+    type: str = "other"
+    semester: Optional[str] = None
+
+
+class AcademicCalendarResponse(BaseModel):
+    id: str
+    title: str
+    markdown: str
+    display_markdown: str
+    events: List[AcademicCalendarEvent] = []
+    updated_at: datetime
+    updated_by: Optional[str] = None
+
+
+class AcademicCalendarUpdate(BaseModel):
+    title: Optional[str] = None
+    markdown: Optional[str] = None

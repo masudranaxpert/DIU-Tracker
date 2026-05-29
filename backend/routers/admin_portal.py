@@ -234,3 +234,30 @@ def admin_list_feedbacks(
     _admin=Depends(get_current_admin),
 ):
     return crud.list_feedbacks_admin(db, batch_id=batch_id, section=section, q=q, page=page, limit=limit)
+
+
+@router.put("/academic-calendar", response_model=schemas.AcademicCalendarResponse)
+def admin_save_academic_calendar(
+    body: schemas.AcademicCalendarUpdate,
+    db: Session = Depends(get_db),
+    admin=Depends(get_current_admin),
+):
+    from services.academic_calendar import strip_events_block
+    import json
+
+    row = crud.save_academic_calendar(db, body, updated_by=admin.id)
+    events = []
+    if row.events_json:
+        try:
+            events = json.loads(row.events_json)
+        except json.JSONDecodeError:
+            events = []
+    return schemas.AcademicCalendarResponse(
+        id=row.id,
+        title=row.title,
+        markdown=row.markdown,
+        display_markdown=strip_events_block(row.markdown),
+        events=events,
+        updated_at=row.updated_at,
+        updated_by=row.updated_by,
+    )

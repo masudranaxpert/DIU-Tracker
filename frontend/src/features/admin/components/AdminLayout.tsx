@@ -32,6 +32,7 @@ import {
   Close,
   MenuBook,
   Quiz,
+  EventNote,
 } from '@mui/icons-material';
 import { useAdminTab, AdminTab } from '@/features/admin/hooks/useAdminTab';
 import { adminAuthService, AdminUser } from '@/features/admin/services/adminAuthService';
@@ -49,6 +50,7 @@ const menuItems: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'course_list', label: 'Course Catalog', icon: <MenuBook fontSize="small" /> },
   { id: 'question_bank', label: 'Question Bank', icon: <Quiz fontSize="small" /> },
   { id: 'batches', label: 'Batches', icon: <Business fontSize="small" /> },
+  { id: 'academic_calendar', label: 'Academic Calendar', icon: <EventNote fontSize="small" /> },
   { id: 'feedback', label: 'Feedback', icon: <RateReview fontSize="small" /> },
   { id: 'rclone', label: 'Rclone', icon: <CloudQueue fontSize="small" /> },
 ];
