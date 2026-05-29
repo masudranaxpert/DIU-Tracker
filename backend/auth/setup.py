@@ -178,6 +178,9 @@ auth_backend = AuthenticationBackend(
 fastapi_users = FastAPIUsers[User, str](get_user_manager, [auth_backend])
 
 current_active_user = fastapi_users.current_user(active=True)
+# Optional: resolves the caller when a valid token is present, else None — lets
+# endpoints stay public for anonymous/student sessions while still scoping CRs.
+current_user_optional = fastapi_users.current_user(active=True, optional=True)
 current_cr_user = fastapi_users.current_user(active=True, verified=False)
 current_user_token_any = fastapi_users.authenticator.current_user_token(
     active=False, verified=False

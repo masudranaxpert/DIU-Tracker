@@ -372,12 +372,12 @@ const App: React.FC = () => {
     >
     <Routes>
       {/* Auth Public Routes */}
-      <Route path="/login" element={profile?.is_cr && profile?.is_active ? <Navigate to="/admin" /> : <LoginPage />} />
+      <Route path="/login" element={profile?.is_cr && profile?.is_active ? <Navigate to="/admin/overview" /> : <LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
-      <Route path="/pending-approval" element={profile?.is_cr && profile?.is_active ? <Navigate to="/admin" /> : <PendingApprovalPage />} />
+      <Route path="/pending-approval" element={profile?.is_cr && profile?.is_active ? <Navigate to="/admin/overview" /> : <PendingApprovalPage />} />
 
       {/* Main App Routes */}
       <Route path="/dashboard" element={
@@ -477,7 +477,7 @@ const App: React.FC = () => {
         }>
           <Route path=":tab" element={<div />} />
           <Route path=":tab/:subId" element={<div />} />
-          <Route index element={<div />} />
+          <Route index element={<Navigate to="overview" replace />} />
         </Route>
       </Route>
 

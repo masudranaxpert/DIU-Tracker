@@ -1,14 +1,29 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 from database import get_db
+from auth.setup import current_user_optional
+from models import User
 import crud, schemas
 
 router = APIRouter(
     prefix="/students",
     tags=["students"]
 )
+
+
+def _ensure_section_access(user: Optional[User], batch_id: str, section: str) -> None:
+    """A CR may only read its own section's directory; anonymous/student callers pass through."""
+    if user is None or not user.is_cr:
+        return
+    same_batch = (user.batch_id or "") == batch_id
+    same_section = (user.section or "").strip().upper() == (section or "").strip().upper()
+    if not (same_batch and same_section):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CRs can only view students from their own section.",
+        )
 
 @router.get("/lookup", response_model=schemas.StudentLookupResult)
 def lookup_student_get(student_id: str, db: Session = Depends(get_db)):
@@ -52,7 +67,13 @@ def unlock_student_section(body: schemas.SectionPinUnlock, db: Session = Depends
 
 
 @router.get("", response_model=List[schemas.StudentResponse])
-def read_students(batch_id: str, section: str, db: Session = Depends(get_db)):
+def read_students(
+    batch_id: str,
+    section: str,
+    db: Session = Depends(get_db),
+    user: Optional[User] = Depends(current_user_optional),
+):
+    _ensure_section_access(user, batch_id, section)
     return crud.get_students(db, batch_id, section)
 
 @router.post("", response_model=schemas.StudentResponse, status_code=status.HTTP_201_CREATED)

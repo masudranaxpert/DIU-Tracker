@@ -82,6 +82,24 @@ interface Props {
     isOffline?: boolean;
 }
 
+type AdminPanelTab = 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE' | 'STUDENTS';
+
+// CR admin sub-tabs <-> URL segments, so each sub-tab is a real, shareable route.
+const ADMIN_TAB_TO_URL: Record<AdminPanelTab, string> = {
+    OVERVIEW: 'overview',
+    ACADEMIC: 'records',
+    COURSES: 'courses',
+    GROUPS: 'groups',
+    NOTICES: 'notices',
+    DEADLINES: 'deadlines',
+    PROFILE: 'profile',
+    STUDENTS: 'students',
+};
+
+const URL_TO_ADMIN_TAB: Record<string, AdminPanelTab> = Object.fromEntries(
+    Object.entries(ADMIN_TAB_TO_URL).map(([tab, url]) => [url, tab as AdminPanelTab])
+);
+
 const MainDashboard: React.FC<Props> = ({
     batches,
     selectedBatch,
@@ -113,11 +131,21 @@ const MainDashboard: React.FC<Props> = ({
     const location = useLocation();
     const lastPathRef = useRef<string>('/dashboard/overview');
 
+    // CR admin lives exclusively under /admin/*; student content under /dashboard/*.
+    const isAdminRoute = location.pathname.startsWith('/admin');
+
     // Determine base active tab from URL or fallback
     const activeTab = useMemo(() => {
-        const t = tab || (location.pathname.startsWith('/admin') ? 'admin' : 'dashboard');
+        if (isAdminRoute) return 'admin';
+        const t = tab || 'dashboard';
         return t === 'overview' ? 'dashboard' : t;
-    }, [tab, location.pathname]);
+    }, [tab, isAdminRoute]);
+
+    // The CR admin panel's sub-tab is driven by the URL segment (/admin/courses → COURSES).
+    const adminSubTab = useMemo<AdminPanelTab>(() => {
+        if (!isAdminRoute) return 'OVERVIEW';
+        return URL_TO_ADMIN_TAB[(tab || 'overview').toLowerCase()] || 'OVERVIEW';
+    }, [isAdminRoute, tab]);
 
     // SEO: Dynamic Page Titles
     useEffect(() => {
@@ -152,7 +180,6 @@ const MainDashboard: React.FC<Props> = ({
 
     const isLoggedIn = !!userProfile || !!studentSession;
     const greetingName = userProfile?.full_name?.split(' ')[0] || studentSession?.name?.split(' ')[0];
-    const [adminInitialTab, setAdminInitialTab] = useState<'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE'>('OVERVIEW');
     const [showNotifications, setShowNotifications] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isSectionSwitcherOpen, setIsSectionSwitcherOpen] = useState(false);
@@ -240,7 +267,7 @@ const MainDashboard: React.FC<Props> = ({
     const handleDateNavigation = (date: Date | string) => {
         const targetDate = typeof date === 'string' ? new Date(date) : date;
         const dateStr = format(targetDate, 'yyyy-MM-dd');
-        const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dashboard';
+        const basePath = '/dashboard';
         navigate(`${basePath}/calendar/${dateStr}`);
         setIsNotificationsOpen(false);
         setIsMobileSidebarOpen(false);
@@ -248,7 +275,7 @@ const MainDashboard: React.FC<Props> = ({
 
     const handleNotificationClick = (n: AppNotification) => {
         markAsRead(n.id);
-        const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dashboard';
+        const basePath = '/dashboard';
         if (n.recordType === 'Announcement') {
             navigate(`${basePath}/notices`);
         } else if (n.recordType?.includes('Deadline')) {
@@ -274,12 +301,12 @@ const MainDashboard: React.FC<Props> = ({
     }, [location.pathname, activeTab]);
 
     const handleAction = useCallback((type: 'record' | 'notice', id: string) => {
-        const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dashboard';
+        const basePath = '/dashboard';
         navigate(`${basePath}/${type}/${id}`);
     }, [navigate, location.pathname]);
 
-    const handleTabChange = useCallback((newTab: string, initialAdminTab?: 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE') => {
-        const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dashboard';
+    const handleTabChange = useCallback((newTab: string) => {
+        const basePath = '/dashboard';
         const routeTab = newTab === 'dashboard' ? 'overview' : newTab;
 
         navigate(`${basePath}/${routeTab}`);
@@ -287,11 +314,7 @@ const MainDashboard: React.FC<Props> = ({
         setIsNotificationsOpen(false);
         setIsBatchSwitcherOpen(false);
         setIsSectionSwitcherOpen(false);
-
-        if (newTab === 'admin' && initialAdminTab) {
-            setAdminInitialTab(initialAdminTab);
-        }
-    }, [navigate, location.pathname]);
+    }, [navigate]);
 
     const handleBatchChange = useCallback((batchId: string) => {
         console.log('[MainDashboard] handleBatchChange invoked for:', batchId);
@@ -355,7 +378,7 @@ const MainDashboard: React.FC<Props> = ({
             <SettingsOverlay
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
-                onAdminClick={() => { setIsSettingsOpen(false); handleTabChange('admin'); }}
+                onAdminClick={() => { setIsSettingsOpen(false); navigate('/admin/overview'); }}
                 theme={theme}
                 toggleTheme={toggleTheme}
                 fontScale={fontScale}
@@ -492,7 +515,7 @@ const MainDashboard: React.FC<Props> = ({
                         <div className="flex flex-col gap-3 items-center">
                             {hasAdminRole && (
                                 <button
-                                    onClick={() => handleTabChange('admin')}
+                                    onClick={() => navigate('/admin/overview')}
                                     className={`w-12 h-12 flex items-center justify-center rounded-xl transition-all duration-300 hover:scale-[1.05] active:scale-[0.95] ${activeTab === 'admin' ? 'bg-slate-950 dark:bg-white text-white dark:text-slate-950 shadow-lg' : 'bg-slate-900 dark:bg-slate-800 text-white shadow-sm hover:bg-slate-950 dark:hover:bg-slate-700'}`}
                                     title={canAccessAdmin ? 'Admin Panel' : 'Switch to Edit'}
                                 >
@@ -535,7 +558,7 @@ const MainDashboard: React.FC<Props> = ({
                                 {hasAdminRole ? (
                                     <>
                                         <button
-                                            onClick={() => handleTabChange('admin')}
+                                            onClick={() => navigate('/admin/overview')}
                                             className={`flex-1 h-12 flex items-center gap-4 px-4 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] group relative ${activeTab === 'admin' ? 'bg-slate-950 dark:bg-white text-white dark:text-slate-950 shadow-lg' : 'bg-slate-900 dark:bg-slate-800 text-white shadow-md hover:bg-slate-950 dark:hover:bg-slate-700'}`}
                                         >
                                             <ShieldCheck size={20} className={activeTab === 'admin' ? 'text-white dark:text-slate-950' : 'text-slate-200 dark:text-slate-300'} />
@@ -827,7 +850,7 @@ const MainDashboard: React.FC<Props> = ({
                                     isDayDetailOpen={isDayDetailOpen}
                                     setIsDayDetailOpen={(open) => {
                                         if (!open) {
-                                            const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dashboard';
+                                            const basePath = '/dashboard';
                                             navigate(`${basePath}/calendar`);
                                         }
                                         setIsDayDetailOpen(open);
@@ -846,7 +869,7 @@ const MainDashboard: React.FC<Props> = ({
                                     deadlines={deadlines}
                                     subId={subId}
                                     onCourseSelect={(courseId) => {
-                                        const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dashboard';
+                                        const basePath = '/dashboard';
                                         if (courseId) {
                                             navigate(`${basePath}/courses/${courseId}`);
                                         } else {
@@ -899,7 +922,8 @@ const MainDashboard: React.FC<Props> = ({
                                         deadlines={deadlines}
                                         section={selectedSection!}
                                         batchId={selectedBatch!}
-                                        initialTab={adminInitialTab}
+                                        initialTab={adminSubTab}
+                                        onTabChange={(t) => navigate(`/admin/${ADMIN_TAB_TO_URL[t as AdminPanelTab] || 'overview'}`)}
                                         onAddRecord={async (r: any) => {
                                             // 1. Separate attachments from the record data
                                             const { attachments, ...recordData } = r;
@@ -1071,7 +1095,7 @@ const MainDashboard: React.FC<Props> = ({
 
                 {hasAdminRole ? (
                     <button
-                        onClick={() => handleTabChange('admin')}
+                        onClick={() => navigate('/admin/overview')}
                         className={`flex-1 relative flex flex-col items-center justify-center gap-1 py-3 rounded-[1.5rem] transition-all duration-300 cursor-pointer ${activeTab === 'admin' ? 'text-emerald-600' : 'text-slate-400 dark:text-slate-500'}`}
                     >
                         {activeTab === 'admin' && (
@@ -1109,7 +1133,7 @@ const MainDashboard: React.FC<Props> = ({
                                 navigate(lastPathRef.current);
                             } else {
                                 // Fallback: just go back to the base tab
-                                const basePath = location.pathname.startsWith('/admin') ? '/admin' : '/dashboard';
+                                const basePath = '/dashboard';
                                 const fallbackTab = (currentTab === 'record' || currentTab === 'notice') ? 'overview' : currentTab;
                                 navigate(`${basePath}/${fallbackTab}`);
                             }
