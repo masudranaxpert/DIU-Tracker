@@ -451,7 +451,6 @@ const StudentManagementView: React.FC<Props> = ({ batchId, section }) => {
                           <ArrowUpDown className="w-3 h-3" />
                         </div>
                       </th>
-                      <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Group</th>
                       <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider">Contact</th>
                       <th className="px-6 py-4 text-xs font-bold text-slate-500 dark:text-slate-300 uppercase tracking-wider text-right">Actions</th>
                     </tr>
@@ -459,14 +458,14 @@ const StudentManagementView: React.FC<Props> = ({ batchId, section }) => {
                   <tbody className="divide-y divide-slate-100 dark:divide-slate-700/80 bg-transparent">
                     {isLoading ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center">
+                        <td colSpan={4} className="px-6 py-12 text-center">
                           <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mx-auto mb-2" />
                           <p className="text-slate-500 dark:text-slate-400">Loading student directory...</p>
                         </td>
                       </tr>
                     ) : filteredStudents.length === 0 ? (
                       <tr>
-                        <td colSpan={5} className="px-6 py-12 text-center">
+                        <td colSpan={4} className="px-6 py-12 text-center">
                           <Users className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-3" />
                           <p className="text-slate-600 dark:text-slate-300 font-medium">No students found matching your criteria</p>
                         </td>
@@ -486,18 +485,6 @@ const StudentManagementView: React.FC<Props> = ({ batchId, section }) => {
                               </div>
                               <span className="text-sm font-medium text-slate-900 dark:text-white">{student.name}</span>
                             </div>
-                          </td>
-                          <td className="px-6 py-4">
-                            {student.sub_section ? (
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${student.sub_section === '1'
-                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300'
-                                : 'bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300'
-                                }`}>
-                                G{student.sub_section}
-                              </span>
-                            ) : (
-                              <span className="text-slate-300 dark:text-slate-600 text-xs">-</span>
-                            )}
                           </td>
                           <td className="px-6 py-4">
                             {student.phone ? (

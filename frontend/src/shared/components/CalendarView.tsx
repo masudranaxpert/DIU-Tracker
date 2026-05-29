@@ -45,6 +45,21 @@ import { Share } from '@capacitor/share';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { useDialogStore } from '@/shared/hooks/useDialog';
 
+function displayRoom(room?: string | null): string | null {
+  const value = room?.trim();
+  if (!value || value.toUpperCase() === 'TBA') return null;
+  return value;
+}
+
+function formatRecordDetails(time?: string | null, room?: string | null): string {
+  const timeLabel = time?.trim() || '';
+  const roomLabel = displayRoom(room);
+  if (timeLabel && roomLabel) return `${timeLabel} (Room: ${roomLabel})`;
+  if (timeLabel) return timeLabel;
+  if (roomLabel) return `Room: ${roomLabel}`;
+  return '--';
+}
+
 interface CalendarViewProps {
   records: AcademicRecord[];
   deadlines: Deadline[];
@@ -222,7 +237,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             type: r.type.toUpperCase(),
             course: courses.find(c => c.id === r.course_id)?.code || 'N/A',
             title: r.title,
-            details: `${r.time || 'TBA'} (Room: ${r.room || 'TBA'})`,
+            details: formatRecordDetails(r.time, r.room),
             isFirst: isFirstOfDate,
             dateKey
           });
@@ -578,7 +593,9 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
             {selectedDayEvents.dayRecords.length > 0 ? (
               <div className="space-y-6">
-                {selectedDayEvents.dayRecords.map(record => (
+                {selectedDayEvents.dayRecords.map(record => {
+                  const roomLabel = displayRoom(record.room);
+                  return (
                   <div key={record.id} className="flex gap-4 group cursor-pointer" onClick={() => onAction('record', record.id)}>
                     <div className="flex flex-col items-center shrink-0">
                       <div className="w-2 h-2 rounded-full border-2 border-slate-200 dark:border-slate-800 group-hover:border-indigo-500 group-hover:bg-indigo-500 transition-all mb-2" />
@@ -597,14 +614,17 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         {record.title}
                       </h6>
                       <div className="flex items-center gap-3 text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-2">
-                        <div className="flex items-center gap-1">
-                          <MapPin size={10} className="text-rose-500" /> {record.room || 'TBA'}
-                        </div>
+                        {roomLabel && (
+                          <div className="flex items-center gap-1">
+                            <MapPin size={10} className="text-rose-500" /> {roomLabel}
+                          </div>
+                        )}
                         <span>{courses.find(c => c.id === record.course_id)?.code}</span>
                       </div>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-12 text-center opacity-20 grayscale">
