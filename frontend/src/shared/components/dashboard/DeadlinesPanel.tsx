@@ -20,7 +20,7 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
 
   return (
     <aside className="xl:col-span-4 tour-deadlines">
-      <div className="sticky top-4 rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-7 shadow-sm min-h-[420px] flex flex-col">
+      <div className="sticky top-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-7 shadow-sm min-h-[420px] flex flex-col">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center">
             <Clock size={18} />

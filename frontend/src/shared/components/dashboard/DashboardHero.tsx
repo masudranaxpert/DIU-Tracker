@@ -33,7 +33,7 @@ const DashboardHero: React.FC<Props> = ({
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-[2rem] lg:rounded-[2.5rem] border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 lg:p-10 text-white shadow-xl shadow-indigo-900/20 tour-stats">
+    <section className="relative overflow-hidden rounded-3xl border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 lg:p-10 text-white shadow-xl shadow-indigo-900/20 tour-stats">
       <div className="absolute -top-20 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
       <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-violet-400/20 rounded-full blur-2xl" />
       <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">

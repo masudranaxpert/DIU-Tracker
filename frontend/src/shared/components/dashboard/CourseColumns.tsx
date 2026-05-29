@@ -36,7 +36,7 @@ const CourseColumn: React.FC<ColumnProps> = ({
 }) => {
   const a = accentMap[accent];
   return (
-    <div className="rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-7 shadow-sm flex flex-col">
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-7 shadow-sm flex flex-col">
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100 dark:border-slate-800">
         <div className="flex items-center gap-2">
           <Icon size={16} className={a.icon} />

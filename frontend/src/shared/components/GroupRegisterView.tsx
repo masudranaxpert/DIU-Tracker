@@ -87,7 +87,7 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
     return (
         <div className="space-y-6 pb-28">
             {/* Header card */}
-            <div className="rounded-[2rem] lg:rounded-[2.5rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
                 <div className="p-5 lg:p-8">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 mb-6">
                         <div className="flex items-center gap-4">
@@ -211,7 +211,7 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
                         const teacher = subSection === '2' && activeCourse?.teacher2 ? activeCourse.teacher2 : activeCourse?.teacher;
 
                         return (
-                            <div key={subSection} className={`rounded-[1.75rem] overflow-hidden border ${isMySubSection
+                            <div key={subSection} className={`rounded-2xl overflow-hidden border ${isMySubSection
                                 ? 'border-emerald-300 dark:border-emerald-800 bg-emerald-50/40 dark:bg-emerald-900/10'
                                 : 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900'
                                 }`}>

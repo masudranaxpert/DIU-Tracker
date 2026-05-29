@@ -11,7 +11,7 @@ interface Props {
 
 const TodaySchedule: React.FC<Props> = ({ records, courses, onOpenRecord, onOpenCalendar }) => {
   return (
-    <section className="tour-schedule rounded-[2rem] border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-8 shadow-sm">
+    <section className="tour-schedule rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-8 shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
