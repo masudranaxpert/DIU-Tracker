@@ -277,17 +277,17 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
                                                             </div>
                                                         ) : (
                                                             members.map((member, idx) => (
-                                                                <div key={member.id || `${member.student_id}-${idx}`} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors">
-                                                                    <span className={`w-7 h-7 rounded-md ${avatarClass} flex items-center justify-center text-[9px] font-bold shrink-0`}>
+                                                                <div key={member.id || `${member.student_id}-${idx}`} className="flex items-center gap-2.5 px-2 py-2 rounded-md bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
+                                                                    <span className={`w-8 h-8 rounded-md ${avatarClass} flex items-center justify-center text-[10px] font-bold shrink-0`}>
                                                                         {initials(member.name)}
                                                                     </span>
                                                                     <div className="min-w-0 flex-1">
-                                                                        <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate leading-tight">
+                                                                        <p className="text-[12px] font-bold text-slate-900 dark:text-white truncate leading-tight">
                                                                             {member.name || 'Unnamed'}
                                                                         </p>
-                                                                        <p className="text-[9px] font-mono text-slate-400 truncate">
+                                                                        <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-300 leading-none">
                                                                             {member.student_id || '—'}
-                                                                        </p>
+                                                                        </span>
                                                                     </div>
                                                                 </div>
                                                             ))

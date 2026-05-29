@@ -438,10 +438,8 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold rounded-lg text-[10px] uppercase tracking-widest border transition-colors cursor-pointer ${
-                isSuccess
-                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400'
-                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-700 disabled:opacity-60'
+              className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold rounded-lg text-[10px] uppercase tracking-widest text-white transition-colors cursor-pointer disabled:opacity-60 ${
+                isSuccess ? 'bg-emerald-600' : 'bg-emerald-600 hover:bg-emerald-700'
               }`}
             >
               {isSaving ? (
@@ -451,7 +449,7 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
               ) : (
                 <Save size={15} />
               )}
-              {isSuccess ? 'Saved' : 'Save'}
+              {isSuccess ? 'Saved' : 'Save Groups'}
             </button>
             <input
               type="file"
@@ -463,16 +461,16 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-widest hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
-              <Upload size={15} /> Import
+              <Upload size={15} className="text-indigo-500" /> Import Excel
             </button>
             <button
               type="button"
               onClick={handleDownloadFormat}
-              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-widest hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
             >
-              <Download size={15} /> Template
+              <Download size={15} className="text-indigo-500" /> Template
             </button>
             <span className="ml-auto self-center inline-flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
               <UserCheck size={13} className="text-slate-400" />
