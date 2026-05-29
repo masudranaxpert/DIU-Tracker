@@ -348,7 +348,7 @@ class CourseGroupCreate(CourseGroupBase):
 class CourseGroupResponse(CourseGroupBase):
     id: str
     created_at: datetime
-    group_members: List[GroupMemberResponse] = []
+    members: List[GroupMemberResponse] = []
 
     class Config:
         from_attributes = True

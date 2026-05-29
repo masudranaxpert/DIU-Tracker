@@ -338,7 +338,7 @@ const MainDashboard: React.FC<Props> = ({
             title: 'Academic',
             items: [
                 { id: 'courses', icon: <BookMarked size={20} />, label: 'Course View', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
-                { id: 'groups', icon: <Users size={20} />, label: 'Groups', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
+                { id: 'groups', icon: <Users size={20} />, label: 'Group List', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
                 { id: 'question_bank', icon: <FileQuestion size={20} />, label: 'QuestionBank', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
             ]
         },
@@ -832,7 +832,15 @@ const MainDashboard: React.FC<Props> = ({
                                     courses={courses}
                                     notices={notices}
                                     deadlines={deadlines}
-                                    onAction={handleTabChange}
+                                    onAction={(tab, subId) => {
+                                        const basePath = '/dashboard';
+                                        const routeTab = tab === 'dashboard' ? 'overview' : tab;
+                                        if (subId && tab === 'courses') {
+                                            navigate(`${basePath}/courses/${subId}`);
+                                        } else {
+                                            navigate(`${basePath}/${routeTab}`);
+                                        }
+                                    }}
                                     onDateSelect={handleDateNavigation}
                                     userProfile={userProfile ? { section: userProfile.section, sub_section: userProfile.sub_section || undefined } : (selectedSection ? { section: selectedSection, sub_section: selectedSubSection || undefined } : undefined)}
                                     batchId={selectedBatch!}

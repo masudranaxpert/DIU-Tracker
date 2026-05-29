@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Course, Section } from '@/shared/types/types';
-import { Users, Search, BookOpen, Layers, UserCircle2, Hash, ShieldAlert } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Course, CourseGroup, Section } from '@/shared/types/types';
+import { Users, Search, BookOpen, Layers, UserCircle2, Hash, Shield } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { useAuth } from '@/app/providers/AuthProvider';
 import { studentService, StudentSession } from '@/shared/services/studentService';
+import { normalizeGroupMembers } from '@/shared/lib/groupUtils';
 import SectionAccessUnlock from './SectionAccessUnlock';
 
 interface Props {
@@ -17,7 +18,7 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
     const { profile: crProfile } = useAuth();
     const [selectedCourseId, setSelectedCourseId] = useState(courses[0]?.id || '');
     const [searchQuery, setSearchQuery] = useState('');
-    const [allGroupsData, setAllGroupsData] = useState<Map<string, any[]>>(new Map());
+    const [allGroupsData, setAllGroupsData] = useState<Map<string, CourseGroup[]>>(new Map());
     const [isLoading, setIsLoading] = useState(false);
     const [isLocked, setIsLocked] = useState(false);
     const [isVerifying, setIsVerifying] = useState(true);
@@ -43,14 +44,10 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
         setIsLocked(false);
     };
 
-    useEffect(() => {
-        loadAllGroups();
-    }, [section, batchId]);
-
-    const loadAllGroups = async () => {
+    const loadAllGroups = useCallback(async () => {
         setIsLoading(true);
         try {
-            const groupsMap = new Map<string, any[]>();
+            const groupsMap = new Map<string, CourseGroup[]>();
             for (const course of courses) {
                 const data = await studentService.fetchGroups(batchId, course.id, section);
                 if (data.length > 0) {
@@ -61,20 +58,29 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [batchId, section, courses]);
+
+    useEffect(() => {
+        if (!isVerifying && !isLocked) {
+            loadAllGroups();
+        }
+    }, [section, batchId, isVerifying, isLocked, loadAllGroups]);
 
     const currentGroups = allGroupsData.get(selectedCourseId) || [];
     const activeCourse = courses.find(c => c.id === selectedCourseId);
 
-    const filteredGroups = currentGroups.filter(group =>
-        !searchQuery || group.group_members?.some((m: any) =>
+    const filteredGroups = currentGroups.filter(group => {
+        const members = normalizeGroupMembers(group as Record<string, unknown>);
+        return !searchQuery || members.some(m =>
             m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             m.student_id.includes(searchQuery)
-        )
-    );
+        );
+    });
 
-    // Calculate stats for current course
-    const totalStudents = currentGroups.reduce((acc, g) => acc + (g.group_members?.length || 0), 0);
+    const totalStudents = currentGroups.reduce(
+        (acc, g) => acc + normalizeGroupMembers(g as Record<string, unknown>).length,
+        0
+    );
     const avgGroupSize = currentGroups.length > 0 ? Math.round(totalStudents / currentGroups.length) : 0;
 
     return (
@@ -87,8 +93,11 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
                             <Users size={24} />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">Groups</h2>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Section {section} • {courses.length} Courses</p>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white uppercase tracking-tight">Group List</h2>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1 flex items-center gap-1.5">
+                                <Shield size={10} className="text-amber-500" />
+                                Section {section} • PIN protected • {courses.length} Courses
+                            </p>
                         </div>
                     </div>
 
@@ -250,7 +259,9 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
 
                                         {/* Groups Grid */}
                                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {subGroups.map(group => (
+                                            {subGroups.map(group => {
+                                                const members = normalizeGroupMembers(group as Record<string, unknown>);
+                                                return (
                                                 <motion.div
                                                     key={group.id}
                                                     whileHover={{ y: -4 }}
@@ -265,13 +276,12 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
                                                             <span className="text-sm font-bold text-slate-900 dark:text-white uppercase">Group {group.group_number}</span>
                                                         </div>
                                                         <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 rounded text-[8px] font-bold text-slate-500 uppercase">
-                                                            {group.group_members?.length || 0} Members
+                                                            {members.length} Members
                                                         </span>
                                                     </div>
 
-                                                    {/* Members List */}
                                                     <div className="space-y-2">
-                                                        {group.group_members?.map((member: any) => (
+                                                        {members.map((member) => (
                                                             <div key={member.id} className="flex items-center justify-between gap-3 p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                                                 <div className="flex items-center gap-2 min-w-0 flex-1">
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
@@ -286,7 +296,7 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
                                                         ))}
                                                     </div>
                                                 </motion.div>
-                                            ))}
+                                            );})}
                                         </div>
                                     </div>
                                 );

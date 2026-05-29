@@ -144,7 +144,25 @@ export const adminService = {
 
   // Groups
   async updateGroups(batchId: string, courseId: string, section: string, groups: CourseGroup[]): Promise<boolean> {
-    const result = await apiClient.post(`/groups/upsert`, { batch_id: batchId, course_id: courseId, section, groups });
+    const qs = new URLSearchParams({
+      batch_id: batchId,
+      course_id: courseId,
+      section: String(section).trim().toUpperCase(),
+    });
+    const payload = groups.map((g) => ({
+      batch_id: batchId,
+      course_id: courseId,
+      section: String(section).trim().toUpperCase(),
+      sub_section: g.sub_section,
+      group_number: g.group_number,
+      members: (g.members || [])
+        .filter((m) => m.student_id?.trim() || m.name?.trim())
+        .map((m) => ({
+          student_id: (m.student_id || '').trim(),
+          name: (m.name || '').trim(),
+        })),
+    }));
+    const result = await apiClient.post(`/groups/upsert?${qs.toString()}`, payload);
     return !result.error;
   },
 

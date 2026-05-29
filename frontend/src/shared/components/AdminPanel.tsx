@@ -15,7 +15,6 @@ import RecordAttachmentsEditor, {
   type RecordAttachmentDraft,
 } from './records/RecordAttachmentsEditor';
 import { resolveMediaUrl } from '@/shared/utils/mediaUrl';
-import { studentService } from '@/shared/services/studentService';
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { useDialogStore } from '@/shared/hooks/useDialog';
@@ -24,6 +23,7 @@ import { Filesystem, Directory } from '@capacitor/filesystem';
 import { Share } from '@capacitor/share';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import StudentManagementView from './StudentManagementView';
+import GroupManagementView from './GroupManagementView';
 
 interface Props {
   courses: Course[];
@@ -146,8 +146,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
     section: section,
   });
 
-  const [groupTargetSub, setGroupTargetSub] = useState<'1' | '2'>('1');
-  const [activeCourseGroups, setActiveCourseGroups] = useState<any[]>([]);
+
   const [sectionPin, setSectionPin] = useState('');
   const [pinIsActive, setPinIsActive] = useState(false);
   const [pinSaveMessage, setPinSaveMessage] = useState<string | null>(null);
@@ -161,9 +160,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
     !!profile?.section &&
     (profile.batch_id !== batchId || profile.section !== section);
   const formRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const restoreInputRef = useRef<HTMLInputElement>(null);
-  const [selectedGroupCourse, setSelectedGroupCourse] = useState('');
   const [newAttachments, setNewAttachments] = useState<RecordAttachmentDraft[]>([
     { name: '', type: 'pdf', url: '', uploadMode: true },
   ]);
@@ -432,154 +429,6 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
     } finally {
       setIsSaving(false);
     }
-  };
-
-  const loadGroups = async (courseId: string) => {
-    const groups = await studentService.fetchGroups(batchId, courseId, section);
-    setActiveCourseGroups(groups);
-  };
-
-  const handleUpdateGroups = async () => {
-    if (!selectedGroupCourse) return;
-    try {
-      await adminService.updateGroups(batchId, selectedGroupCourse, section, activeCourseGroups);
-      setIsSuccess(true);
-      setTimeout(() => setIsSuccess(false), 3000);
-    } catch (err: any) {
-      console.error('Error updating groups:', err);
-      alert('Failed to update groups: ' + (err.message || 'Unknown error'));
-    }
-  };
-
-  const handleDownloadFormat = async () => {
-    const wsData = [
-      ['Sub Section', 'Group Number', 'Student ID', 'Student Name'],
-      ['1', '1', '221-15-1234', 'John Doe'],
-      ['1', '1', '221-15-1235', 'Jane Doe'],
-      ['1', '2', '221-15-1236', 'Alice Smith'],
-      ['2', '1', '221-15-1237', 'Bob Johnson']
-    ];
-
-    if (activeCourseGroups && activeCourseGroups.length > 0) {
-      wsData.length = 1; // Keep header
-      activeCourseGroups.forEach(group => {
-        group.members.forEach((member: any) => {
-          if (member.student_id || member.name) {
-            wsData.push([
-              group.sub_section,
-              group.group_number.toString(),
-              member.student_id,
-              member.name
-            ]);
-          }
-        });
-      });
-    }
-
-    const ws = XLSX.utils.aoa_to_sheet(wsData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Lab Groups");
-    const fileName = `Lab_Groups_Format_${section}.xlsx`;
-
-    if (Capacitor.isNativePlatform()) {
-      try {
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'base64' });
-        // Write to Cache first as a reliable staging area
-        const cacheFile = await Filesystem.writeFile({
-          path: fileName,
-          data: wbout,
-          directory: Directory.Cache,
-          recursive: true
-        });
-
-        // Try direct Download folder save
-        try {
-          await Filesystem.writeFile({
-            path: `Download/${fileName}`,
-            data: wbout,
-            directory: Directory.ExternalStorage,
-            recursive: true
-          });
-
-          dialog.alert(`Excel file saved to your Download folder: ${fileName}`, 'Export Success');
-
-          try {
-            await LocalNotifications.schedule({
-              notifications: [{
-                title: "Export Successful",
-                body: `${fileName} is now in your Downloads`,
-                id: Date.now()
-              }]
-            });
-          } catch (ne) { }
-
-        } catch (downloadError) {
-          // Fallback for Scoped Storage
-          await Share.share({
-            title: 'Save Excel File',
-            files: [cacheFile.uri]
-          });
-        }
-      } catch (error) {
-        console.error('Excel export failed on native:', error);
-        XLSX.writeFile(wb, fileName);
-      }
-    } else {
-      XLSX.writeFile(wb, fileName);
-    }
-  };
-
-  const handleExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      try {
-        const bstr = evt.target?.result;
-        const wb = XLSX.read(bstr, { type: 'binary' });
-        const wsname = wb.SheetNames[0];
-        const ws = wb.Sheets[wsname];
-        const data = XLSX.utils.sheet_to_json<any>(ws);
-
-        const newGroupsMap = new Map<string, any>();
-
-        data.forEach(row => {
-          const sub = row['Sub Section']?.toString();
-          const gNum = parseInt(row['Group Number']);
-          const sId = row['Student ID']?.toString() || '';
-          const sName = row['Student Name']?.toString() || '';
-
-          if (sub && !isNaN(gNum) && (sId || sName)) {
-            const key = `${sub}-${gNum}`;
-            if (!newGroupsMap.has(key)) {
-              newGroupsMap.set(key, {
-                sub_section: sub,
-                group_number: gNum,
-                members: []
-              });
-            }
-            newGroupsMap.get(key).members.push({ student_id: sId, name: sName });
-          }
-        });
-
-        const newGroups = Array.from(newGroupsMap.values());
-        if (newGroups.length > 0) {
-          setActiveCourseGroups(newGroups);
-          dialog.alert('Successfully imported groups from Excel!', 'Import Success');
-        } else {
-          dialog.alert('No valid group data found in the Excel file. Please use the provided format.', 'Data Error');
-        }
-      } catch (error) {
-        console.error('Error importing Excel:', error);
-        dialog.alert('Failed to parse Excel file. Please ensure it is a valid format.', 'Parse Error');
-      }
-
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-    reader.readAsBinaryString(file);
   };
 
   const handleBackupSystem = async () => {
@@ -1403,103 +1252,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
           )}
 
           {activeTab === 'GROUPS' && (
-            <div className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-2">
-                  <NativeSelect
-                    label="Select Course Registry"
-                    placeholder="Select Course"
-                    options={courses.map(c => ({ id: c.id, name: `${c.code} - ${c.name}` }))}
-                    value={selectedGroupCourse}
-                    onChange={val => {
-                      const courseId = String(val);
-                      setSelectedGroupCourse(courseId);
-                      setActiveCourseGroups([]);
-                      if (courseId) loadGroups(courseId);
-                    }}
-                    icon={<Layers size={16} />}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Sub-Section Context</label>
-                  <div className="flex gap-4">
-                    <button onClick={() => setGroupTargetSub('1')} className={`flex-1 py-4 rounded-2xl font-black text-xs transition-all ${groupTargetSub === '1' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>{section}1 (Group 1-5)</button>
-                    <button onClick={() => setGroupTargetSub('2')} className={`flex-1 py-4 rounded-2xl font-black text-xs transition-all ${groupTargetSub === '2' ? 'bg-indigo-600 text-white shadow-lg' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'}`}>{section}2 (Group 1-5)</button>
-                  </div>
-                </div>
-              </div>
-
-              {selectedGroupCourse && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
-                  {[1, 2, 3, 4, 5].map(gNum => {
-                    const group = activeCourseGroups.find(g => g.sub_section === groupTargetSub && g.group_number === gNum) || { sub_section: groupTargetSub, group_number: gNum, members: [] };
-                    return (
-                      <div key={gNum} className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200 dark:border-slate-700">
-                          <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Group {gNum}</h4>
-                          <span className="text-[8px] font-black text-slate-400">{section}{groupTargetSub}</span>
-                        </div>
-                        <div className="space-y-3">
-                          {[0, 1, 2, 3, 4].map(mIdx => (
-                            <div key={mIdx} className="space-y-1">
-                              <input
-                                type="text"
-                                placeholder="ID"
-                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg text-[10px] font-bold dark:text-white outline-none focus:border-indigo-500"
-                                value={group.members[mIdx]?.student_id || ''}
-                                onChange={e => {
-                                  const newGroups = [...activeCourseGroups];
-                                  let gIdx = newGroups.findIndex(ng => ng.sub_section === groupTargetSub && ng.group_number === gNum);
-                                  if (gIdx === -1) {
-                                    newGroups.push({ sub_section: groupTargetSub, group_number: gNum, members: [] });
-                                    gIdx = newGroups.length - 1;
-                                  }
-                                  const members = [...newGroups[gIdx].members];
-                                  if (!members[mIdx]) members[mIdx] = { student_id: '', name: '' };
-                                  members[mIdx].student_id = e.target.value;
-                                  newGroups[gIdx].members = members;
-                                  setActiveCourseGroups(newGroups);
-                                }}
-                              />
-                              <input
-                                type="text"
-                                placeholder="Name"
-                                className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg text-[10px] font-bold dark:text-white outline-none focus:border-indigo-500"
-                                value={group.members[mIdx]?.name || ''}
-                                onChange={e => {
-                                  const newGroups = [...activeCourseGroups];
-                                  let gIdx = newGroups.findIndex(ng => ng.sub_section === groupTargetSub && ng.group_number === gNum);
-                                  if (gIdx === -1) {
-                                    newGroups.push({ sub_section: groupTargetSub, group_number: gNum, members: [] });
-                                    gIdx = newGroups.length - 1;
-                                  }
-                                  const members = [...newGroups[gIdx].members];
-                                  if (!members[mIdx]) members[mIdx] = { student_id: '', name: '' };
-                                  members[mIdx].name = e.target.value;
-                                  newGroups[gIdx].members = members;
-                                  setActiveCourseGroups(newGroups);
-                                }}
-                              />
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {selectedGroupCourse && (
-                <div className="flex flex-col md:flex-row gap-4">
-                  <button onClick={handleUpdateGroups} className="px-12 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:scale-[1.02] transition-all" >Save Group List</button>
-                  <div className="flex gap-2">
-                    <input type="file" accept=".xlsx, .xls, .csv" className="hidden" ref={fileInputRef} onChange={handleExcelImport} />
-                    <button onClick={() => fileInputRef.current?.click()} className="px-6 py-4 bg-emerald-600/10 text-emerald-600 border border-emerald-600/20 font-black rounded-2xl text-[10px] uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-all">Excel Import</button>
-                    <button onClick={handleDownloadFormat} className="px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all">Download Format</button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <GroupManagementView courses={courses} batchId={batchId} section={section} />
           )}
 
           {activeTab === 'PROFILE' && profile && (

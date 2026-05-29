@@ -1,5 +1,6 @@
 import { apiClient } from './apiClient';
-import { UserProfile } from '@/shared/types/types';
+import { CourseGroup, UserProfile } from '@/shared/types/types';
+import { normalizeCourseGroups } from '@/shared/lib/groupUtils';
 
 export type CrProfileForLock = {
   is_cr?: boolean;
@@ -292,7 +293,7 @@ export const studentService = {
       const result = await apiClient.get<CourseGroup[]>(
         `/groups?batch_id=${batchId}&course_id=${courseId}&section=${section}`
       );
-      return result.data || [];
+      return normalizeCourseGroups(result.data || []);
     } catch (e) {
       console.error('Error fetching groups:', e);
       return [];
