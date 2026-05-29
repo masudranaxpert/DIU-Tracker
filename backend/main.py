@@ -19,7 +19,11 @@ from commands import run_cli
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
+    from services.qbank_submission_cache import purge_on_startup, start_daily_purge_loop
+
     await create_db_and_tables()
+    purge_on_startup()
+    start_daily_purge_loop()
     yield
 
 

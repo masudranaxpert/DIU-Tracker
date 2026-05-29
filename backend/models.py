@@ -350,3 +350,27 @@ class QbPdf(Base):
     exam_type: Mapped[Optional[str]] = mapped_column(String, nullable=True, index=True)
     submissions_count: Mapped[int] = mapped_column(Integer, default=0)
     scraped_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class QbSubmissionCache(Base):
+    """Cached direct PDF links for a question (scraped from DIUQBank detail page).
+
+    Rows expire after 24 hours and are removed by a daily purge job.
+    """
+
+    __tablename__ = "qb_submission_cache"
+    __table_args__ = (
+        UniqueConstraint(
+            "question_external_id",
+            "submission_external_id",
+            name="uq_qb_submission_cache_question_sub",
+        ),
+    )
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=generate_uuid)
+    question_external_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    submission_external_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    pdf_url: Mapped[str] = mapped_column(String, nullable=False)
+    section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    uploader: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)

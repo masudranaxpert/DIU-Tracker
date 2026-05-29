@@ -2,15 +2,14 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy import String, cast
 from sqlalchemy.orm import Session
 
 import models
 import schemas
 from database import get_db
-
-BASE_URL = "https://diuqbank.com"
-
+from services import qbank_submission_cache as qb_cache
 
 router = APIRouter(prefix="/qbank", tags=["qbank"])
 
@@ -37,12 +36,11 @@ def qb_list_pdfs(
     if exam_type:
         query = query.filter(models.QbPdf.exam_type == exam_type)
 
-    # Minimal search: matches the URL or question id
     if q:
         needle = f"%{q.strip().lower()}%"
         query = query.filter(
             (models.QbPdf.pdf_url.ilike(needle))
-            | (models.QbPdf.question_external_id.cast(models.String).ilike(needle))
+            | (cast(models.QbPdf.question_external_id, String).ilike(needle))
         )
 
     total = query.count()
@@ -101,41 +99,45 @@ def qb_pdf_filters(db: Session = Depends(get_db)):
 
 
 @router.get("/questions/{question_id}/submissions", response_model=schemas.QbSubmissionsResponse)
-def qb_question_submissions(question_id: int):
-    """Fetch the direct PDF links for a single question, on demand.
-
-    DIUQBank keeps the actual PDFs on each question's detail page, so we scrape
-    that page live only when a user opens a specific question (avoids mass
-    scraping / rate-limits during sync)."""
-    import httpcloak
-
-    from scrape.qbank_scrape import scrape_question_show
-
-    url = f"{BASE_URL}/questions/{question_id}"
-    try:
-        with httpcloak.Session(preset="chrome-latest") as session:
-            resp = session.get(
-                url,
-                headers={
-                    "Referer": f"{BASE_URL}/",
-                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-                    "Accept-Language": "en-US,en;q=0.9",
-                },
-            )
-            if resp.status_code >= 400:
-                raise RuntimeError(f"HTTP {resp.status_code}")
-            _question, submissions = scrape_question_show(resp.text or "")
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=502, detail=f"Could not load submissions: {exc}") from exc
-
-    items = [
-        {
-            "id": s.id,
-            "pdf_url": s.pdf_url,
-            "section": s.section,
-            "uploader": (s.user or {}).get("name"),
+def qb_question_submissions(question_id: int, db: Session = Depends(get_db)):
+    """Return cached PDF links (24h TTL). If missing or expired, refresh runs in background."""
+    cached = qb_cache.get_cached_submissions(db, question_id)
+    if cached:
+        return {
+            "question_id": question_id,
+            "submissions": cached,
+            "status": "ready",
+            "from_cache": True,
         }
-        for s in submissions
-        if s.pdf_url
-    ]
-    return {"question_id": question_id, "submissions": items}
+
+    err = qb_cache.get_refresh_error(question_id)
+    if err and not qb_cache.is_refresh_running(question_id):
+        return {
+            "question_id": question_id,
+            "submissions": [],
+            "status": "error",
+            "from_cache": False,
+            "error": err,
+        }
+
+    qb_cache.start_refresh_job(question_id)
+
+    return {
+        "question_id": question_id,
+        "submissions": [],
+        "status": "refreshing",
+        "from_cache": False,
+    }
+
+
+@router.post("/questions/{question_id}/submissions/refresh", response_model=schemas.QbSubmissionsResponse)
+def qb_force_refresh_submissions(question_id: int, db: Session = Depends(get_db)):
+    """Force a background re-scrape (e.g. user clicked Retry)."""
+    qb_cache.delete_question_cache(db, question_id)
+    qb_cache.start_refresh_job(question_id, force=True)
+    return {
+        "question_id": question_id,
+        "submissions": [],
+        "status": "refreshing",
+        "from_cache": False,
+    }

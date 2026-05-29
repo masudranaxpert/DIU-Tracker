@@ -604,6 +604,9 @@ class QbSubmissionItem(BaseModel):
 class QbSubmissionsResponse(BaseModel):
     question_id: int
     submissions: List[QbSubmissionItem] = []
+    status: str = "ready"  # ready | refreshing | error
+    from_cache: bool = False
+    error: Optional[str] = None
 
 
 class QbScrapeJobResponse(BaseModel):

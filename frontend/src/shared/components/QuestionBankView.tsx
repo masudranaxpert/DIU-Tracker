@@ -56,11 +56,22 @@ type QbSubmission = {
   uploader?: string | null;
 };
 
+type QbSubmissionsResponse = {
+  submissions: QbSubmission[];
+  status?: 'ready' | 'refreshing' | 'error';
+  from_cache?: boolean;
+  error?: string;
+};
+
 type SubmissionState = {
   loading: boolean;
   items: QbSubmission[];
+  refreshing?: boolean;
   error?: string;
 };
+
+const DEFAULT_DEPARTMENT = 'CSE';
+const SUBMISSION_POLL_MS = 2000;
 
 const examBadgeClass = (name: string) => {
   switch ((name || '').toLowerCase()) {
@@ -196,7 +207,7 @@ const QuestionBankView: React.FC = () => {
   const [items, setItems] = useState<QbQuestion[]>([]);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState<QbFilters>({ departments: [], courses: [], semesters: [], exam_types: [] });
-  const [department, setDepartment] = useState('');
+  const [department, setDepartment] = useState(DEFAULT_DEPARTMENT);
   const [course, setCourse] = useState('');
   const [semester, setSemester] = useState('');
   const [examType, setExamType] = useState('');
@@ -207,39 +218,110 @@ const QuestionBankView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [subs, setSubs] = useState<Record<number, SubmissionState>>({});
+  const pollTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
-  const activeCount = [department, course, semester, examType].filter(Boolean).length;
+  const activeCount = [department, course, semester, examType].filter(
+    (value, index) => (index === 0 ? value !== DEFAULT_DEPARTMENT : Boolean(value))
+  ).length;
 
-  const loadSubmissions = useCallback(async (questionId: number) => {
-    setSubs((current) => ({ ...current, [questionId]: { loading: true, items: [] } }));
-    try {
-      const response = await apiClient.get<{ submissions: QbSubmission[] }>(
-        `/qbank/questions/${questionId}/submissions`
-      );
-      setSubs((current) => ({
-        ...current,
-        [questionId]: { loading: false, items: response.data?.submissions || [] },
-      }));
-    } catch {
-      setSubs((current) => ({
-        ...current,
-        [questionId]: { loading: false, items: [], error: 'Could not load PDF links. Try again.' },
-      }));
+  const clearPoll = useCallback((questionId: number) => {
+    const timer = pollTimers.current[questionId];
+    if (timer) {
+      clearTimeout(timer);
+      delete pollTimers.current[questionId];
     }
   }, []);
 
-  const toggleView = useCallback((questionId: number) => {
-    setOpenId((current) => {
-      const next = current === questionId ? null : questionId;
-      if (next !== null) {
-        const existing = subs[questionId];
-        if (!existing || (!existing.loading && existing.items.length === 0 && !existing.error)) {
-          loadSubmissions(questionId);
+  const loadSubmissions = useCallback(
+    async (questionId: number, options?: { force?: boolean }) => {
+      clearPoll(questionId);
+
+      if (options?.force) {
+        try {
+          await apiClient.post(`/qbank/questions/${questionId}/submissions/refresh`);
+        } catch {
+          setSubs((current) => ({
+            ...current,
+            [questionId]: { loading: false, items: [], error: 'Could not refresh PDF links.' },
+          }));
+          return;
         }
       }
-      return next;
-    });
-  }, [subs, loadSubmissions]);
+
+      setSubs((current) => ({
+        ...current,
+        [questionId]: {
+          loading: true,
+          items: current[questionId]?.items || [],
+          refreshing: Boolean(options?.force),
+        },
+      }));
+
+      try {
+        const response = await apiClient.get<QbSubmissionsResponse>(
+          `/qbank/questions/${questionId}/submissions`
+        );
+        const data = response.data;
+        const status = data?.status || 'ready';
+
+        if (status === 'refreshing') {
+          setSubs((current) => ({
+            ...current,
+            [questionId]: { loading: true, items: [], refreshing: true },
+          }));
+          pollTimers.current[questionId] = setTimeout(() => {
+            loadSubmissions(questionId);
+          }, SUBMISSION_POLL_MS);
+          return;
+        }
+
+        if (status === 'error') {
+          setSubs((current) => ({
+            ...current,
+            [questionId]: {
+              loading: false,
+              items: [],
+              error: data?.error || 'Could not load PDF links. Try again.',
+            },
+          }));
+          return;
+        }
+
+        setSubs((current) => ({
+          ...current,
+          [questionId]: { loading: false, items: data?.submissions || [] },
+        }));
+      } catch {
+        setSubs((current) => ({
+          ...current,
+          [questionId]: { loading: false, items: [], error: 'Could not load PDF links. Try again.' },
+        }));
+      }
+    },
+    [clearPoll]
+  );
+
+  useEffect(() => {
+    return () => {
+      Object.values(pollTimers.current).forEach(clearTimeout);
+      pollTimers.current = {};
+    };
+  }, []);
+
+  const toggleView = useCallback(
+    (questionId: number) => {
+      setOpenId((current) => {
+        const next = current === questionId ? null : questionId;
+        if (next === null) {
+          clearPoll(questionId);
+        } else {
+          loadSubmissions(questionId);
+        }
+        return next;
+      });
+    },
+    [clearPoll, loadSubmissions]
+  );
 
   const loadPage = useCallback(async (nextPage: number) => {
     setIsLoading(true);
@@ -295,7 +377,7 @@ const QuestionBankView: React.FC = () => {
   };
 
   const clearAll = () => {
-    setDepartment('');
+    setDepartment(DEFAULT_DEPARTMENT);
     setCourse('');
     setSemester('');
     setExamType('');
@@ -466,14 +548,14 @@ const QuestionBankView: React.FC = () => {
                       {state?.loading ? (
                         <div className="flex items-center justify-center gap-2 py-3 text-xs font-bold text-slate-500 dark:text-slate-400">
                           <Loader2 size={15} className="animate-spin" />
-                          Loading PDF links...
+                          {state.refreshing ? 'Fetching fresh PDF links (cached 24h)...' : 'Loading PDF links...'}
                         </div>
                       ) : state?.error ? (
                         <div className="flex items-center justify-between gap-2 py-1">
                           <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">{state.error}</span>
                           <button
                             type="button"
-                            onClick={() => loadSubmissions(question.question_external_id)}
+                            onClick={() => loadSubmissions(question.question_external_id, { force: true })}
                             className="rounded-lg px-2 py-1 text-[11px] font-black uppercase tracking-widest text-indigo-600 hover:bg-indigo-100 dark:text-indigo-400 dark:hover:bg-slate-800"
                           >
                             Retry

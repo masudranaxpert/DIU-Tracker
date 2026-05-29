@@ -8,6 +8,7 @@ import NativeSelect from './NativeSelect';
 import CustomDatePicker from './CustomDatePicker';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminService } from '@/shared/services/adminService';
+import { studentService } from '@/shared/services/studentService';
 import CourseCatalogSelect from './CourseCatalogSelect';
 import TeacherDirectorySelect from './TeacherDirectorySelect';
 import RecordAttachmentsEditor, {
@@ -108,6 +109,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
     deadlines: true,
     groups: true
   });
+  const [isBackingUp, setIsBackingUp] = useState(false);
 
   // Sync profile data when it loads or changes
   React.useEffect(() => {
@@ -438,38 +440,53 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
   };
 
   const handleBackupSystem = async () => {
+    const hasSelection = Object.values(backupOptions).some(Boolean);
+    if (!hasSelection) {
+      dialog.alert('Please select at least one item to backup.', 'Empty Backup');
+      return;
+    }
+
+    setIsBackingUp(true);
     try {
-      // Collect data from various services for backup
-      const data: any = {};
+      const zip = new JSZip();
+      const exportedAt = new Date().toISOString();
+
+      zip.file(
+        '_meta.json',
+        JSON.stringify(
+          {
+            version: 1,
+            exportedAt,
+            batchId,
+            section,
+            included: backupOptions,
+          },
+          null,
+          2
+        )
+      );
 
       if (backupOptions.courses) {
-        // TODO: Fetch courses from API
+        zip.file('courses.json', JSON.stringify(courses, null, 2));
       }
       if (backupOptions.records) {
-        // TODO: Fetch records from API
+        zip.file('records.json', JSON.stringify(records, null, 2));
       }
       if (backupOptions.notices) {
-        // TODO: Fetch notices from API
+        zip.file('notices.json', JSON.stringify(notices, null, 2));
       }
       if (backupOptions.deadlines) {
-        // TODO: Fetch deadlines from API
+        zip.file('deadlines.json', JSON.stringify(deadlines, null, 2));
       }
       if (backupOptions.groups) {
-        // TODO: Fetch groups from API
-      }
-
-      const zip = new JSZip();
-
-      if (backupOptions.courses && data.courses && data.courses.length > 0) zip.file('courses.json', JSON.stringify(data.courses, null, 2));
-      if (backupOptions.records && data.records && data.records.length > 0) zip.file('records.json', JSON.stringify(data.records, null, 2));
-      if (backupOptions.notices && data.notices && data.notices.length > 0) zip.file('notices.json', JSON.stringify(data.notices, null, 2));
-      if (backupOptions.deadlines && data.deadlines && data.deadlines.length > 0) zip.file('deadlines.json', JSON.stringify(data.deadlines, null, 2));
-      if (backupOptions.groups && data.groups && data.groups.length > 0) zip.file('groups.json', JSON.stringify(data.groups, null, 2));
-
-      // Check if any files were added to zip
-      if (Object.keys(zip.files).length === 0) {
-        dialog.alert('Please select at least one item to backup.', 'Empty Backup');
-        return;
+        const groupsByCourse = await Promise.all(
+          courses.map(async (course) => ({
+            course_id: course.id,
+            course_code: course.code ?? null,
+            groups: await studentService.fetchGroups(batchId, course.id, section),
+          }))
+        );
+        zip.file('groups.json', JSON.stringify(groupsByCourse, null, 2));
       }
 
       // Dynamic filename based on selection
@@ -536,6 +553,8 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
     } catch (err) {
       console.error('Backup failed:', err);
       dialog.alert('Backup failed. Check console for details.', 'Backup Failed');
+    } finally {
+      setIsBackingUp(false);
     }
   };
 
@@ -1696,9 +1715,18 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                           {backupMode === 'BACKUP' ? (
                             <button
                               onClick={handleBackupSystem}
-                              className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-3"
+                              disabled={isBackingUp}
+                              className="w-full py-5 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-600/20 hover:bg-indigo-700 hover:scale-[1.01] transition-all flex items-center justify-center gap-3 disabled:opacity-60 disabled:hover:scale-100"
                             >
-                              <Save size={20} /> Generate & Download Backup
+                              {isBackingUp ? (
+                                <>
+                                  <Loader2 size={20} className="animate-spin" /> Preparing backup...
+                                </>
+                              ) : (
+                                <>
+                                  <Save size={20} /> Generate & Download Backup
+                                </>
+                              )}
                             </button>
                           ) : (
                             <div className="space-y-4">
