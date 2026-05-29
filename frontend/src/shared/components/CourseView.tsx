@@ -2,7 +2,6 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { Course, AcademicRecord, EntryType, Section, Deadline } from '@/shared/types/types';
 import {
   BookOpen,
-  FileText,
   ChevronRight,
   ChevronLeft,
   Search,
@@ -448,43 +447,6 @@ const CourseView: React.FC<Props> = ({
                     <p className="text-xs font-black text-slate-400 uppercase tracking-widest">No milestones yet</p>
                   </div>
                 )}
-
-                <div className="grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={() => setDetailTab('materials')}
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left hover:border-indigo-300 transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <FileText className="h-5 w-5 text-indigo-500" />
-                      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                    </div>
-                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Materials</p>
-                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
-                      {allCourseRecords.length === 0
-                        ? 'No CT, slides, or files yet'
-                        : `${allCourseRecords.length} record${allCourseRecords.length === 1 ? '' : 's'}`}
-                    </p>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setDetailTab('timeline')}
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left hover:border-indigo-300 transition-all cursor-pointer group"
-                  >
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <Calendar className="h-5 w-5 text-amber-500" />
-                      <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-amber-500 transition-colors" />
-                    </div>
-                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">Schedule</p>
-                    <p className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1">
-                      {upcomingDeadlines.length === 0
-                        ? activeDeadlines.length === 0
-                          ? 'No exam dates or deadlines yet'
-                          : 'No upcoming — see completed in tab'
-                        : `${upcomingDeadlines.length} upcoming date${upcomingDeadlines.length === 1 ? '' : 's'}`}
-                    </p>
-                  </button>
-                </div>
 
                 {allCourseRecords.slice(0, 3).length > 0 && (
                   <div>

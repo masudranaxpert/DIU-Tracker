@@ -4,7 +4,6 @@ import { AcademicRecord, EntryType } from '@/shared/types/types';
 import {
     X,
     Clock,
-    MapPin,
     FileText,
     Link as LinkIcon,
     ExternalLink,
@@ -23,6 +22,7 @@ import {
 import { ENTRY_TYPE_COLORS } from '@/shared/utils/constants';
 import { format, parseISO } from 'date-fns';
 import { resolveMediaUrl } from '@/shared/utils/mediaUrl';
+import { resolveAttachmentPreview } from '@/shared/utils/attachmentPreview';
 import { recordService } from '@/shared/services/recordService';
 
 interface Props {
@@ -101,6 +101,10 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
     };
 
     if (!record) return null;
+
+    const attachmentPreview = activeAttachment
+        ? resolveAttachmentPreview(activeAttachment)
+        : null;
 
     return (
         <AnimatePresence>
@@ -225,23 +229,14 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                 </div>
                             )}
 
-                            <div className="grid grid-cols-2 gap-6">
+                            {record.sub_section && (
                                 <div className="space-y-3">
                                     <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                        <MapPin size={12} className="text-rose-500" /> Room / Venue
+                                        <Layers size={12} className="text-emerald-500" /> Lab Group
                                     </h3>
-                                    <p className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">{record.room || 'Remote / TBA'}</p>
+                                    <p className="text-sm font-bold text-emerald-500 uppercase tracking-tight">Group {record.sub_section}</p>
                                 </div>
-
-                                {record.sub_section && (
-                                    <div className="space-y-3">
-                                        <h3 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                                            <Layers size={12} className="text-emerald-500" /> Lab Group
-                                        </h3>
-                                        <p className="text-sm font-bold text-emerald-500 uppercase tracking-tight">Group {record.sub_section}</p>
-                                    </div>
-                                )}
-                            </div>
+                            )}
 
                             {/* Uploader info & Analytics Row */}
                             <div className="flex items-center gap-4 pt-6 border-t border-slate-100 dark:border-slate-800">
@@ -379,47 +374,27 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                         transformStyle: 'preserve-3d'
                                     }}
                                 >
-                                    {activeAttachment.type === 'image' && (
-                                        <img src={activeAttachment.url} alt={activeAttachment.name} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" style={{ imageRendering: 'high' }} />
+                                    {attachmentPreview?.mode === 'image' && (
+                                        <img src={attachmentPreview.src} alt={activeAttachment.name} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" style={{ imageRendering: 'high' }} />
                                     )}
-                                    {activeAttachment.type === 'video' && (
-                                        <video src={activeAttachment.url} controls className="max-w-full max-h-full rounded-lg shadow-2xl" />
+                                    {attachmentPreview?.mode === 'video' && (
+                                        <video src={attachmentPreview.src} controls className="max-w-full max-h-full rounded-lg shadow-2xl" />
                                     )}
-                                    {(activeAttachment.type === 'pdf' ||
-                                        activeAttachment.type === 'word' ||
-                                        activeAttachment.type === 'excel' ||
-                                        activeAttachment.type === 'pptx' ||
-                                        (activeAttachment.type === 'other' && (
-                                            activeAttachment.url.toLowerCase().endsWith('.pdf') ||
-                                            activeAttachment.url.toLowerCase().endsWith('.docx') ||
-                                            activeAttachment.url.toLowerCase().endsWith('.pptx') ||
-                                            activeAttachment.url.toLowerCase().endsWith('.xlsx')
-                                        ))) && (
-                                            <div className="w-full h-full bg-white rounded-lg overflow-hidden flex flex-col">
-                                                <iframe
-                                                    src={activeAttachment.url.toLowerCase().endsWith('.pdf') && !(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))
-                                                        ? activeAttachment.url
-                                                        : `https://docs.google.com/viewer?url=${encodeURIComponent(activeAttachment.url)}&embedded=true`}
-                                                    className="w-full h-full border-0"
-                                                    title="Document Preview"
-                                                />
-                                            </div>
-                                        )}
-                                    {activeAttachment.type === 'link' && (
+                                    {attachmentPreview?.mode === 'iframe' && (
                                         <div className="w-full h-full relative group bg-slate-900/50 flex flex-col">
                                             <iframe
-                                                src={activeAttachment.url.includes('drive.google.com') && activeAttachment.url.includes('/view')
-                                                    ? activeAttachment.url.replace('/view', '/preview')
-                                                    : activeAttachment.url}
+                                                src={attachmentPreview.src}
                                                 className="flex-1 w-full rounded-lg bg-white"
-                                                title="External Preview"
+                                                title={activeAttachment.name || 'Document Preview'}
+                                                allow="autoplay"
                                             />
-                                            {/* Action bar for links */}
                                             <div className="absolute inset-x-0 bottom-6 flex justify-center pointer-events-none z-30">
                                                 <div className={`pointer-events-auto bg-slate-900 border border-slate-700 p-2 pl-4 pr-2 rounded-2xl flex items-center gap-4 shadow-2xl transition-all duration-300 transform ${showExternalLinkBar ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100'}`}>
-                                                    <span className="text-slate-300 text-[10px] font-bold uppercase tracking-wider hidden sm:block">Content Blocked?</span>
-                                                    <a href={activeAttachment.url} target="_blank" rel="noreferrer" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95">
-                                                        Open External Site <ExternalLink size={12} />
+                                                    <span className="text-slate-300 text-[10px] font-bold uppercase tracking-wider hidden sm:block">
+                                                        {attachmentPreview.isDrive ? 'Open in Google Drive' : 'Content blocked?'}
+                                                    </span>
+                                                    <a href={attachmentPreview.openUrl} target="_blank" rel="noreferrer" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95">
+                                                        Open in Drive <ExternalLink size={12} />
                                                     </a>
                                                     <button
                                                         onClick={() => setShowExternalLinkBar(false)}
@@ -429,8 +404,6 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                                     </button>
                                                 </div>
                                             </div>
-
-                                            {/* Mobile trigger for the bar */}
                                             <button
                                                 onClick={() => setShowExternalLinkBar(!showExternalLinkBar)}
                                                 className="md:hidden absolute bottom-4 right-4 z-40 p-3 bg-indigo-600 text-white rounded-full shadow-lg border border-indigo-400/30"
@@ -439,14 +412,14 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                             </button>
                                         </div>
                                     )}
-                                    {activeAttachment.type === 'other' && !activeAttachment.url.toLowerCase().endsWith('.pdf') && !activeAttachment.url.toLowerCase().endsWith('.docx') && !activeAttachment.url.toLowerCase().endsWith('.pptx') && !activeAttachment.url.toLowerCase().endsWith('.xlsx') && (
+                                    {attachmentPreview?.mode === 'none' && (
                                         <div className="text-center text-white p-8">
                                             <div className="w-24 h-24 bg-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-500 mx-auto mb-6 shadow-2xl border border-slate-700">
                                                 <FileCode size={40} />
                                             </div>
                                             <h3 className="text-xl font-black mb-2 uppercase tracking-tight">Direct Preview Unavailable</h3>
-                                            <p className="text-slate-400 mb-8 max-w-xs mx-auto text-xs font-bold uppercase tracking-wide">This specific file format cannot be rendered directly in the app.</p>
-                                            <a href={activeAttachment.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 hover:scale-105 active:scale-95">
+                                            <p className="text-slate-400 mb-8 max-w-xs mx-auto text-xs font-bold uppercase tracking-wide">This file type cannot be rendered in the app. Open it externally instead.</p>
+                                            <a href={attachmentPreview.openUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-3 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 hover:scale-105 active:scale-95">
                                                 Download / Open <ExternalLink size={16} />
                                             </a>
                                         </div>

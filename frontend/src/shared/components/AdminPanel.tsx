@@ -949,11 +949,11 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                   <div className="md:col-span-3 space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1 flex items-center gap-1.5">
                       <FileText size={12} className="text-blue-500" />
-                      {newRecord.type === EntryType.CT || newRecord.type === EntryType.MID || newRecord.type === EntryType.FINAL || newRecord.type === EntryType.PROJECT_REPORT ? 'Covered Topics / Syllabus' : 'Description '}
+                      {newRecord.type === EntryType.CT || newRecord.type === EntryType.MID || newRecord.type === EntryType.FINAL || newRecord.type === EntryType.PROJECT_REPORT ? 'Covered Topics / Syllabus' : 'Description'}
+                      <span className="text-slate-300 dark:text-slate-600 font-semibold normal-case tracking-normal">(optional)</span>
                     </label>
                     <textarea
                       rows={2}
-                      required
                       placeholder={newRecord.type === EntryType.CT || newRecord.type === EntryType.MID || newRecord.type === EntryType.FINAL || newRecord.type === EntryType.PROJECT_REPORT ? 'Syllabus / Topics covered...' : 'Detailed description or notes...'}
                       className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl outline-none focus:border-indigo-500 font-medium dark:text-white resize-none text-sm"
                       value={(newRecord.type === EntryType.CT || newRecord.type === EntryType.MID || newRecord.type === EntryType.FINAL || newRecord.type === EntryType.PROJECT_REPORT) ? (newRecord.topics || '') : (newRecord.description || '')}
