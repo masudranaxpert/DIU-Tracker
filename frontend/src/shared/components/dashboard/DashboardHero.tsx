@@ -33,32 +33,30 @@ const DashboardHero: React.FC<Props> = ({
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-3xl border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 lg:p-10 text-white shadow-xl shadow-indigo-900/20 tour-stats">
-      <div className="absolute -top-20 -right-16 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-violet-400/20 rounded-full blur-2xl" />
-      <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+    <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 lg:p-6 tour-stats">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.25em] text-indigo-200 mb-2">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-600 mb-1.5">
             {getGreeting(now)} • Section {section}
           </p>
-          <h1 className="text-2xl lg:text-3xl font-black uppercase tracking-tight leading-tight">
+          <h1 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-tight">
             {format(now, 'EEEE')}
           </h1>
-          <p className="text-sm font-bold text-indigo-100/90 mt-1">{format(now, 'MMMM d, yyyy')}</p>
+          <p className="text-[13px] font-medium text-slate-400 mt-0.5">{format(now, 'MMMM d, yyyy')}</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full lg:w-auto lg:min-w-[420px]">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full lg:w-auto lg:min-w-[420px]">
           {stats.map((item) => (
             <div
               key={item.label}
-              className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 px-4 py-3"
+              className="rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-3.5 py-2.5"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <item.icon size={14} className="text-indigo-200" />
-                <span className="text-[8px] font-black uppercase tracking-widest text-indigo-200">
+              <div className="flex items-center gap-1.5 mb-1">
+                <item.icon size={13} className="text-slate-400" />
+                <span className="text-[8px] font-bold uppercase tracking-widest text-slate-400">
                   {item.label}
                 </span>
               </div>
-              <p className="text-lg font-black truncate">{item.val}</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-white truncate tabular-nums">{item.val}</p>
             </div>
           ))}
         </div>

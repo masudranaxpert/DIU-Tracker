@@ -20,7 +20,7 @@ const DeadlineDetailModal: React.FC<Props> = ({ deadline, courses, onClose }) =>
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-900 rounded-3xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800"
+        className="bg-white dark:bg-slate-900 rounded-xl p-6 max-w-md w-full shadow-2xl border border-slate-200 dark:border-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         <span className={`inline-block text-[8px] font-black text-white px-2 py-1 rounded uppercase tracking-widest ${color}`}>
@@ -40,7 +40,7 @@ const DeadlineDetailModal: React.FC<Props> = ({ deadline, courses, onClose }) =>
         <button
           type="button"
           onClick={onClose}
-          className="mt-6 w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-colors cursor-pointer"
+          className="mt-6 w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[10px] uppercase tracking-widest transition-colors cursor-pointer"
         >
           Close
         </button>

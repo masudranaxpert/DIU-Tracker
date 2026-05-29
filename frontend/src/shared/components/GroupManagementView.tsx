@@ -28,7 +28,7 @@ import {
   mergeSubSectionGroups,
   normalizeCourseGroups,
 } from '@/shared/lib/groupUtils';
-import { initials, gradientFor } from '@/shared/lib/avatar';
+import { initials, avatarClass } from '@/shared/lib/avatar';
 import GroupEditorCard from './groups/GroupEditorCard';
 
 interface Props {
@@ -331,26 +331,24 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
 
   return (
     <div className="space-y-6">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-3xl border border-indigo-100 dark:border-indigo-900/40 bg-gradient-to-br from-indigo-600 via-indigo-700 to-violet-800 p-6 lg:p-8 text-white shadow-xl shadow-indigo-900/20">
-        <div className="absolute -top-16 -right-12 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-1/4 w-44 h-44 bg-violet-400/20 rounded-full blur-2xl" />
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center">
-              <Users size={26} />
+      {/* Header */}
+      <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 lg:p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+              <Users size={22} />
             </div>
             <div>
-              <h2 className="text-lg lg:text-xl font-black uppercase tracking-tight">
+              <h2 className="text-base lg:text-lg font-bold text-slate-900 dark:text-white">
                 Lab Group Manager
               </h2>
-              <p className="text-[10px] font-bold text-indigo-100/90 uppercase tracking-widest mt-1">
-                Section {section} • Random • Excel • Autocomplete
+              <p className="text-[11px] font-medium text-slate-400 mt-0.5">
+                Section {section} — assign students into lab groups
               </p>
             </div>
           </div>
           {selectedCourseId && (
-            <div className="grid grid-cols-3 gap-2.5 w-full lg:w-auto lg:min-w-[320px]">
+            <div className="flex items-center gap-2.5 w-full lg:w-auto">
               {[
                 { label: 'Filled', val: `${filledGroups}/${GROUP_COUNT}` },
                 { label: 'Assigned', val: assignedCount },
@@ -358,10 +356,12 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
               ].map((s) => (
                 <div
                   key={s.label}
-                  className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2.5 text-center"
+                  className="flex-1 lg:flex-initial lg:min-w-[80px] rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 px-3 py-2 text-center"
                 >
-                  <p className="text-lg font-black leading-none">{s.val}</p>
-                  <p className="text-[8px] font-black uppercase tracking-widest text-indigo-200 mt-1">
+                  <p className="text-base font-bold text-slate-900 dark:text-white leading-none tabular-nums">
+                    {s.val}
+                  </p>
+                  <p className="text-[8px] font-bold uppercase tracking-widest text-slate-400 mt-1">
                     {s.label}
                   </p>
                 </div>
@@ -388,16 +388,16 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
           <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
             Sub-Section
           </label>
-          <div className="flex gap-3">
+          <div className="flex gap-2 p-1 rounded-lg bg-slate-100 dark:bg-slate-800">
             {(['1', '2'] as const).map((sub) => (
               <button
                 key={sub}
                 type="button"
                 onClick={() => setGroupTargetSub(sub)}
-                className={`flex-1 py-3.5 rounded-2xl font-black text-xs transition-all ${
+                className={`flex-1 py-2.5 rounded-md font-bold text-xs transition-colors cursor-pointer ${
                   groupTargetSub === sub
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                    ? 'bg-white dark:bg-slate-900 text-indigo-600 shadow-sm'
+                    : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
                 }`}
               >
                 {section}{sub}
@@ -408,9 +408,9 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
       </div>
 
       {!selectedCourseId && (
-        <div className="flex flex-col items-center justify-center py-20 text-center rounded-2xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30">
-          <div className="w-16 h-16 rounded-3xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center mb-4">
-            <Layers size={30} />
+        <div className="flex flex-col items-center justify-center py-20 text-center rounded-xl border border-dashed border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/30">
+          <div className="w-14 h-14 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 flex items-center justify-center mb-4">
+            <Layers size={26} />
           </div>
           <h3 className="text-xs font-black text-slate-500 dark:text-slate-300 uppercase tracking-widest">
             Select a lab course to begin
@@ -424,34 +424,34 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
       {selectedCourseId && (
         <>
           {/* Sticky action bar */}
-          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-3 p-4 rounded-2xl bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border border-slate-200 dark:border-slate-700 shadow-sm">
+          <div className="sticky top-2 z-20 flex flex-wrap items-center gap-2 p-3 rounded-xl bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-slate-200 dark:border-slate-700">
             <Tooltip title={`Shuffle ${section}${groupTargetSub} students evenly into 5 groups`}>
               <button
                 type="button"
                 onClick={handleRandomDistribute}
-                className="inline-flex items-center gap-2 px-5 py-3 bg-violet-600 hover:bg-violet-700 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-colors shadow-md cursor-pointer"
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg text-[10px] uppercase tracking-widest transition-colors cursor-pointer"
               >
-                <Shuffle size={16} /> Random
+                <Shuffle size={15} /> Random
               </button>
             </Tooltip>
             <button
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className={`inline-flex items-center gap-2 px-5 py-3 font-black rounded-xl text-[10px] uppercase tracking-widest transition-colors shadow-md cursor-pointer ${
+              className={`inline-flex items-center gap-2 px-4 py-2.5 font-bold rounded-lg text-[10px] uppercase tracking-widest border transition-colors cursor-pointer ${
                 isSuccess
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:border-indigo-300 dark:hover:border-indigo-700 disabled:opacity-60'
               }`}
             >
               {isSaving ? (
-                <Loader2 size={16} className="animate-spin" />
+                <Loader2 size={15} className="animate-spin" />
               ) : isSuccess ? (
-                <CheckCircle2 size={16} />
+                <CheckCircle2 size={15} />
               ) : (
-                <Save size={16} />
+                <Save size={15} />
               )}
-              {isSuccess ? 'Saved' : 'Save Groups'}
+              {isSuccess ? 'Saved' : 'Save'}
             </button>
             <input
               type="file"
@@ -463,19 +463,19 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-emerald-600/10 text-emerald-700 dark:text-emerald-400 border border-emerald-600/20 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-emerald-600 hover:text-white transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-widest hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer"
             >
-              <Upload size={16} /> Import
+              <Upload size={15} /> Import
             </button>
             <button
               type="button"
               onClick={handleDownloadFormat}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-black rounded-xl text-[10px] uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-lg text-[10px] uppercase tracking-widest hover:border-indigo-300 dark:hover:border-indigo-700 transition-colors cursor-pointer"
             >
-              <Download size={16} /> Template
+              <Download size={15} /> Template
             </button>
-            <span className="ml-auto self-center inline-flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-widest">
-              <UserCheck size={13} className="text-indigo-500" />
+            <span className="ml-auto self-center inline-flex items-center gap-1.5 text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+              <UserCheck size={13} className="text-slate-400" />
               {selectedCourse?.code} • {subRoster.length} in {section}{groupTargetSub}
             </span>
           </div>
@@ -510,10 +510,10 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
 
           {/* Unassigned pool */}
           {unassignedStudents.length > 0 && (
-            <div className="rounded-2xl border border-amber-200/70 dark:border-amber-900/40 bg-amber-50/60 dark:bg-amber-950/20 p-4 lg:p-5">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 p-4 lg:p-5">
               <div className="flex items-center gap-2 mb-3">
-                <UserCheck size={15} className="text-amber-600" />
-                <h4 className="text-[10px] font-black text-amber-700 dark:text-amber-300 uppercase tracking-widest">
+                <UserCheck size={15} className="text-slate-400" />
+                <h4 className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
                   Unassigned • {unassignedStudents.length}
                 </h4>
               </div>
@@ -521,34 +521,30 @@ const GroupManagementView: React.FC<Props> = ({ courses, batchId, section }) => 
                 {unassignedStudents.map((s) => (
                   <span
                     key={s.student_id}
-                    className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-full bg-white dark:bg-slate-800 border border-amber-200/70 dark:border-amber-900/40 shadow-sm"
+                    className="inline-flex items-center gap-2 pl-1.5 pr-3 py-1.5 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
                   >
                     <span
-                      className={`w-6 h-6 rounded-full bg-gradient-to-br ${gradientFor(
-                        s.student_id || s.name
-                      )} text-white flex items-center justify-center text-[8px] font-black`}
+                      className={`w-6 h-6 rounded-md ${avatarClass} flex items-center justify-center text-[8px] font-bold`}
                     >
                       {initials(s.name)}
                     </span>
-                    <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate max-w-[120px]">
+                    <span className="text-[10px] font-semibold text-slate-700 dark:text-slate-200 truncate max-w-[120px]">
                       {s.name}
                     </span>
-                    <span className="text-[9px] font-mono font-semibold text-slate-400">
-                      {s.student_id}
-                    </span>
+                    <span className="text-[9px] font-mono text-slate-400">{s.student_id}</span>
                   </span>
                 ))}
               </div>
             </div>
           )}
 
-          <div className="flex items-start gap-3 p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
-            <Sparkles size={18} className="text-indigo-500 shrink-0 mt-0.5" />
-            <p className="text-[10px] font-medium text-indigo-900 dark:text-indigo-200 leading-relaxed">
-              Search a name or ID inside any group to add a student — they&apos;re removed from other
-              groups automatically. Tap <strong>Random</strong> to auto-split {section}
-              {groupTargetSub}&apos;s {subRoster.length} students, then <strong>Save</strong>.
-              Students see the result under <strong>Group List</strong> after entering the section PIN.
+          <div className="flex items-start gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800">
+            <Sparkles size={16} className="text-slate-400 shrink-0 mt-0.5" />
+            <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
+              Add students from the roster or manually inside any group — they&apos;re removed from other
+              groups automatically. Tap <strong className="text-slate-700 dark:text-slate-200">Random</strong> to auto-split {section}
+              {groupTargetSub}&apos;s {subRoster.length} students, then <strong className="text-slate-700 dark:text-slate-200">Save</strong>.
+              Students see the result under <strong className="text-slate-700 dark:text-slate-200">Group List</strong> after entering the section PIN.
             </p>
           </div>
         </>

@@ -20,16 +20,16 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
 
   return (
     <aside className="xl:col-span-4 tour-deadlines">
-      <div className="sticky top-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-7 shadow-sm min-h-[420px] flex flex-col">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-violet-900/30 text-violet-600 flex items-center justify-center">
-            <Clock size={18} />
+      <div className="sticky top-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 lg:p-6 min-h-[420px] flex flex-col">
+        <div className="flex items-center gap-3 mb-5">
+          <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+            <Clock size={17} />
           </div>
           <div>
-            <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white">
+            <h2 className="text-[11px] font-bold uppercase tracking-widest text-slate-900 dark:text-white">
               Deadlines
             </h2>
-            <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+            <p className="text-[9px] font-medium text-slate-400 uppercase tracking-widest">
               Upcoming & history
             </p>
           </div>
@@ -59,12 +59,12 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
                       type="button"
                       whileHover={{ x: 4 }}
                       onClick={() => onSelect(deadline)}
-                      className="w-full flex gap-3 items-start p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left group cursor-pointer"
+                      className="w-full flex gap-3 items-start p-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left group cursor-pointer"
                     >
                       <div
-                        className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center shrink-0 text-white ${color} ${dueToday ? 'ring-2 ring-offset-2 ring-emerald-400 dark:ring-offset-slate-900' : ''}`}
+                        className={`w-10 h-10 rounded-lg flex flex-col items-center justify-center shrink-0 text-white ${color} ${dueToday ? 'ring-2 ring-offset-2 ring-emerald-400 dark:ring-offset-slate-900' : ''}`}
                       >
-                        <span className="text-[7px] font-black uppercase opacity-90">
+                        <span className="text-[7px] font-bold uppercase opacity-90">
                           {format(parseISO(deadline.date), 'MMM')}
                         </span>
                         <span className="text-sm font-black leading-none">
@@ -72,14 +72,14 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-black text-slate-800 dark:text-slate-200 uppercase truncate group-hover:text-indigo-600 transition-colors">
+                        <p className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate group-hover:text-indigo-600 transition-colors">
                           {deadline.title}
                         </p>
                         <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                          <span className={`text-[7px] font-black text-white px-1.5 py-0.5 rounded uppercase ${color}`}>
+                          <span className={`text-[7px] font-bold text-white px-1.5 py-0.5 rounded uppercase ${color}`}>
                             {deadline.type}
                           </span>
-                          <span className="text-[8px] font-bold text-slate-400 uppercase truncate">
+                          <span className="text-[8px] font-medium text-slate-400 uppercase truncate">
                             {course?.code || 'General'}
                           </span>
                         </div>
@@ -93,7 +93,7 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
               <button
                 type="button"
                 onClick={() => setShowAll(!showAll)}
-                className="w-full mt-3 py-2.5 text-[8px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-600 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer"
+                className="w-full mt-3 py-2.5 text-[8px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-600 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer"
               >
                 {showAll ? 'Show less' : `+${upcoming.length - VISIBLE} more`}
               </button>

@@ -11,11 +11,11 @@ interface Props {
 
 const TodaySchedule: React.FC<Props> = ({ records, courses, onOpenRecord, onOpenCalendar }) => {
   return (
-    <section className="tour-schedule rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 lg:p-8 shadow-sm">
-      <div className="flex items-center justify-between mb-6">
+    <section className="tour-schedule rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 lg:p-6">
+      <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center">
-            <Zap size={18} />
+          <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+            <Zap size={17} />
           </div>
           <div>
             <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-900 dark:text-white">
@@ -36,13 +36,13 @@ const TodaySchedule: React.FC<Props> = ({ records, courses, onOpenRecord, onOpen
       </div>
 
       {records.length === 0 ? (
-        <div className="py-10 text-center rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+        <div className="py-10 text-center rounded-lg bg-slate-50 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700">
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
             No classes or events today
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {records.slice(0, 5).map((record) => {
             const course = courses.find((c) => c.id === record.course_id);
             return (
@@ -50,10 +50,10 @@ const TodaySchedule: React.FC<Props> = ({ records, courses, onOpenRecord, onOpen
                 key={record.id}
                 type="button"
                 onClick={() => onOpenRecord(record)}
-                className="w-full flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors text-left group cursor-pointer"
+                className="w-full flex items-center gap-3.5 p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors text-left group cursor-pointer"
               >
-                <div className="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 flex items-center justify-center shrink-0">
-                  <Activity size={20} />
+                <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center shrink-0">
+                  <Activity size={18} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase truncate">
