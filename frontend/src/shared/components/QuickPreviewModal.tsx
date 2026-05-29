@@ -38,7 +38,6 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
     const [activeAttachment, setActiveAttachment] = React.useState<any | null>(null);
     const [isExpandedMode, setIsExpandedMode] = React.useState(false);
     const [zoomLevel, setZoomLevel] = React.useState(1);
-    const [showExternalLinkBar, setShowExternalLinkBar] = React.useState(false);
     const [isContributorModalOpen, setIsContributorModalOpen] = React.useState(false);
     const previewContainerRef = React.useRef<HTMLDivElement>(null);
     // Reset active attachment when record changes or modal closes
@@ -47,7 +46,6 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
             setActiveAttachment(null);
             setIsExpandedMode(false);
             setZoomLevel(1);
-            setShowExternalLinkBar(false);
         } else if (record?.id) {
             // Increment views when opened
             recordService.incrementRecordViews(record.id);
@@ -249,8 +247,7 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                         )}
                                     </div>
                                     <div className="min-w-0">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-0.5 leading-none">Uploader Info</p>
-                                        <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase truncate mb-0.5">{record.uploader?.full_name || 'Official Admin'}</p>
+                                        <p className="text-[11px] font-black text-slate-900 dark:text-white uppercase truncate mb-0.5">{record.uploader?.full_name || 'Unknown'}</p>
                                         <p className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">
                                             {record.created_at ? format(parseISO(record.created_at), 'MMM dd, yyyy · hh:mm a') : 'Legacy Record'}
                                         </p>
@@ -303,6 +300,17 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                         >
                             {/* Reader Mode Header Controls - Show on Hover (Desktop Only) */}
                             <div className="absolute top-4 right-4 z-20 hidden md:flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                {attachmentPreview?.mode === 'iframe' && (
+                                    <a
+                                        href={attachmentPreview.openUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="inline-flex items-center gap-2 px-3 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-indigo-600/25"
+                                    >
+                                        {attachmentPreview.isDrive ? 'Open in Drive' : 'Open link'}
+                                        <ExternalLink size={14} />
+                                    </a>
+                                )}
                                 <button
                                     onClick={toggleFullscreen}
                                     className={`p-2.5 ${isExpandedMode ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30' : 'bg-black/50 text-slate-200'} hover:bg-indigo-500 rounded-xl transition-all`}
@@ -316,7 +324,8 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                 </button>
                             </div>
 
-                            {/* Zoom Controls at Bottom - Show on Hover (Desktop Only) */}
+                            {/* Zoom Controls — images & video only (not Drive iframe) */}
+                            {(attachmentPreview?.mode === 'image' || attachmentPreview?.mode === 'video') && (
                             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 hidden md:block opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none group-hover:pointer-events-auto">
                                 <div className="flex items-center bg-black/60 rounded-[1.25rem] border border-white/10 p-1.5 px-4 gap-3 shadow-2xl scale-90 group-hover:scale-100 transition-all duration-300">
                                     <button onClick={() => handleZoom('out')} className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-all" title="Zoom Out"><ZoomOut size={16} /></button>
@@ -326,6 +335,7 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                     <button onClick={() => handleZoom('reset')} className="p-1.5 hover:bg-white/10 rounded-lg text-white transition-all" title="Reset View"><RefreshCw size={14} /></button>
                                 </div>
                             </div>
+                            )}
 
                             {/* Minimalist Mobile Top Bar */}
                             <div className="absolute top-0 left-0 right-0 z-[999] h-12 bg-black border-b border-white/5 flex items-center justify-between px-4 md:hidden">
@@ -364,6 +374,25 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
 
                             {/* Preview Content */}
                             <div className="flex-1 flex items-center justify-center p-0 pt-12 md:p-4 overflow-hidden relative bg-[#0b0f1a]">
+                                {attachmentPreview?.mode === 'iframe' ? (
+                                    <div className="w-full h-full flex flex-col">
+                                        <iframe
+                                            src={attachmentPreview.src}
+                                            className="flex-1 w-full rounded-lg bg-white"
+                                            title={activeAttachment.name || 'Document Preview'}
+                                            allow="autoplay"
+                                        />
+                                        {/* Mobile: open externally */}
+                                        <a
+                                            href={attachmentPreview.openUrl}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="md:hidden mt-2 mx-2 mb-1 inline-flex items-center justify-center gap-2 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest"
+                                        >
+                                            {attachmentPreview.isDrive ? 'Open in Drive' : 'Open link'} <ExternalLink size={14} />
+                                        </a>
+                                    </div>
+                                ) : (
                                 <motion.div
                                     animate={{ scale: zoomLevel }}
                                     transition={{ type: 'spring', damping: 30, stiffness: 300 }}
@@ -380,38 +409,6 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                     {attachmentPreview?.mode === 'video' && (
                                         <video src={attachmentPreview.src} controls className="max-w-full max-h-full rounded-lg shadow-2xl" />
                                     )}
-                                    {attachmentPreview?.mode === 'iframe' && (
-                                        <div className="w-full h-full relative group bg-slate-900/50 flex flex-col">
-                                            <iframe
-                                                src={attachmentPreview.src}
-                                                className="flex-1 w-full rounded-lg bg-white"
-                                                title={activeAttachment.name || 'Document Preview'}
-                                                allow="autoplay"
-                                            />
-                                            <div className="absolute inset-x-0 bottom-6 flex justify-center pointer-events-none z-30">
-                                                <div className={`pointer-events-auto bg-slate-900 border border-slate-700 p-2 pl-4 pr-2 rounded-2xl flex items-center gap-4 shadow-2xl transition-all duration-300 transform ${showExternalLinkBar ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100'}`}>
-                                                    <span className="text-slate-300 text-[10px] font-bold uppercase tracking-wider hidden sm:block">
-                                                        {attachmentPreview.isDrive ? 'Open in Google Drive' : 'Content blocked?'}
-                                                    </span>
-                                                    <a href={attachmentPreview.openUrl} target="_blank" rel="noreferrer" className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 shadow-lg shadow-indigo-600/20 hover:scale-105 active:scale-95">
-                                                        Open in Drive <ExternalLink size={12} />
-                                                    </a>
-                                                    <button
-                                                        onClick={() => setShowExternalLinkBar(false)}
-                                                        className="md:hidden p-2 text-slate-400 hover:text-white"
-                                                    >
-                                                        <X size={14} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <button
-                                                onClick={() => setShowExternalLinkBar(!showExternalLinkBar)}
-                                                className="md:hidden absolute bottom-4 right-4 z-40 p-3 bg-indigo-600 text-white rounded-full shadow-lg border border-indigo-400/30"
-                                            >
-                                                <LinkIcon size={18} />
-                                            </button>
-                                        </div>
-                                    )}
                                     {attachmentPreview?.mode === 'none' && (
                                         <div className="text-center text-white p-8">
                                             <div className="w-24 h-24 bg-slate-800 rounded-[2.5rem] flex items-center justify-center text-slate-500 mx-auto mb-6 shadow-2xl border border-slate-700">
@@ -425,6 +422,7 @@ const QuickPreviewModal: React.FC<Props> = ({ record, courseName, isOpen, onClos
                                         </div>
                                     )}
                                 </motion.div>
+                                )}
                             </div>
                         </div>
                     )}

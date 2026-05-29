@@ -1,7 +1,7 @@
 from typing import Optional
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 import models, schemas
 
@@ -12,7 +12,9 @@ def get_notices(
     section: Optional[str] = None,
     sub_section: Optional[str] = None,
 ):
-    query = db.query(models.Notice).filter(models.Notice.batch_id == batch_id)
+    query = db.query(models.Notice).options(joinedload(models.Notice.creator)).filter(
+        models.Notice.batch_id == batch_id
+    )
     if section:
         if sub_section:
             query = query.filter(

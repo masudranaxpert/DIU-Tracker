@@ -312,7 +312,7 @@ class AcademicRecordResponse(AcademicRecordBase):
     created_by: Optional[str]
     created_at: datetime
     attachments: List[AttachmentResponse] = []
-    uploader: Optional[SimpleUserResponse] = Field(None, alias="uploader")
+    uploader: Optional[SimpleUserResponse] = Field(default=None, validation_alias="creator")
 
     class Config:
         from_attributes = True
@@ -381,7 +381,7 @@ class NoticeResponse(NoticeBase):
     id: str
     created_by: Optional[str]
     created_at: datetime
-    uploader: Optional[SimpleUserResponse] = None
+    uploader: Optional[SimpleUserResponse] = Field(default=None, validation_alias="creator")
 
     class Config:
         from_attributes = True

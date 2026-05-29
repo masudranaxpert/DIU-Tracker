@@ -282,10 +282,10 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
                                                                         {initials(member.name)}
                                                                     </span>
                                                                     <div className="min-w-0 flex-1">
-                                                                        <p className="text-[12px] font-bold text-slate-900 dark:text-white truncate leading-tight">
+                                                                        <p className="text-[12px] font-medium text-slate-900 dark:text-white truncate leading-snug">
                                                                             {member.name || 'Unnamed'}
                                                                         </p>
-                                                                        <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-mono font-bold text-indigo-600 dark:text-indigo-300 leading-none">
+                                                                        <span className="inline-block mt-1 px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-mono font-normal text-indigo-600 dark:text-indigo-300 leading-normal">
                                                                             {member.student_id || '—'}
                                                                         </span>
                                                                     </div>

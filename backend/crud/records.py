@@ -1,13 +1,20 @@
 from typing import Optional
 
 from sqlalchemy import or_
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 import models, schemas
 
 
+def _record_query(db: Session):
+    return db.query(models.AcademicRecord).options(
+        joinedload(models.AcademicRecord.creator),
+        joinedload(models.AcademicRecord.attachments),
+    )
+
+
 def get_records(db: Session, batch_id: str, section: str, sub_section: Optional[str] = None):
-    query = db.query(models.AcademicRecord).filter(
+    query = _record_query(db).filter(
         models.AcademicRecord.batch_id == batch_id,
         models.AcademicRecord.section == section,
     )
@@ -22,15 +29,14 @@ def get_records(db: Session, batch_id: str, section: str, sub_section: Optional[
 
 
 def get_record(db: Session, record_id: str):
-    return db.query(models.AcademicRecord).filter(models.AcademicRecord.id == record_id).first()
+    return _record_query(db).filter(models.AcademicRecord.id == record_id).first()
 
 
 def create_record(db: Session, record: schemas.AcademicRecordCreate):
     db_record = models.AcademicRecord(**record.model_dump())
     db.add(db_record)
     db.commit()
-    db.refresh(db_record)
-    return db_record
+    return get_record(db, db_record.id)
 
 
 def update_record(db: Session, record_id: str, updates: schemas.AcademicRecordUpdate):
@@ -40,8 +46,7 @@ def update_record(db: Session, record_id: str, updates: schemas.AcademicRecordUp
     for key, value in updates.model_dump(exclude_unset=True).items():
         setattr(db_record, key, value)
     db.commit()
-    db.refresh(db_record)
-    return db_record
+    return get_record(db, record_id)
 
 
 def delete_record(db: Session, record_id: str):
