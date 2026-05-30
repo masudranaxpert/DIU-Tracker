@@ -8,11 +8,17 @@ interface Props {
   batchId: string;
   section: Section;
   subSection?: string | null;
+  batchLabel?: string;
   title?: string;
   description?: string;
   submitLabel?: string;
   embedded?: boolean;
   onUnlocked: (session: StudentSession) => void;
+}
+
+function readStoredBatchLabel(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('selectedBatchName')?.trim() || '';
 }
 
 type UnlockMode = 'returning' | 'new';
@@ -21,6 +27,7 @@ const SectionAccessUnlock: React.FC<Props> = ({
   batchId,
   section,
   subSection,
+  batchLabel,
   title = 'Access Locked',
   description,
   submitLabel = 'Unlock',
@@ -39,6 +46,15 @@ const SectionAccessUnlock: React.FC<Props> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [lockoutUntil, setLockoutUntil] = useState<number | null>(null);
+  const [resolvedBatchLabel, setResolvedBatchLabel] = useState(batchLabel?.trim() || '');
+
+  useEffect(() => {
+    if (batchLabel?.trim()) {
+      setResolvedBatchLabel(batchLabel.trim());
+      return;
+    }
+    setResolvedBatchLabel(readStoredBatchLabel());
+  }, [batchLabel]);
 
   useEffect(() => {
     const storedAttempts = localStorage.getItem(`pin_attempts_${batchId}_${section}`);
@@ -254,7 +270,18 @@ const SectionAccessUnlock: React.FC<Props> = ({
           >
             {desc}
           </p>
-          <div className="pt-1">
+          <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+            {resolvedBatchLabel ? (
+              <span
+                className={
+                  embedded
+                    ? 'inline-flex items-center rounded-full bg-violet-600/10 px-2.5 py-0.5 text-[11px] font-semibold text-violet-700 ring-1 ring-inset ring-violet-600/15 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/25'
+                    : 'inline-flex items-center rounded-full bg-violet-600/10 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-violet-700 dark:text-violet-300 ring-1 ring-violet-500/20'
+                }
+              >
+                {resolvedBatchLabel}
+              </span>
+            ) : null}
             <span
               className={
                 embedded

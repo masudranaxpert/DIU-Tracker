@@ -9,6 +9,7 @@ type ProtectedBlurShellProps = {
   batchId: string;
   section: Section;
   subSection?: string | null;
+  batchLabel?: string;
   children: React.ReactNode;
   hint?: string;
   modalTitle?: string;
@@ -24,6 +25,7 @@ const ProtectedBlurShell: React.FC<ProtectedBlurShellProps> = ({
   batchId,
   section,
   subSection,
+  batchLabel,
   children,
   hint = 'Tap to enter section code',
   modalTitle = 'Unlock section content',
@@ -70,6 +72,7 @@ const ProtectedBlurShell: React.FC<ProtectedBlurShellProps> = ({
         batchId={batchId}
         section={section}
         subSection={subSection}
+        batchLabel={batchLabel}
         title={modalTitle}
         description={modalDescription}
         submitLabel={submitLabel}
