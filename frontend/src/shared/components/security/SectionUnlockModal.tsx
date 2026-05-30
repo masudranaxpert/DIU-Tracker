@@ -52,47 +52,53 @@ const SectionUnlockModal: React.FC<SectionUnlockModalProps> = ({
           role="dialog"
           aria-modal="true"
           aria-label={title}
-          className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center p-0 sm:p-4"
+          className="fixed inset-0 z-[120] flex flex-col sm:items-center sm:justify-center sm:p-4 sm:bg-slate-950/60 sm:backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          onClick={onClose}
         >
-          <button
-            type="button"
-            aria-label="Close dialog"
-            className="absolute inset-0 bg-slate-950/55 backdrop-blur-sm cursor-pointer"
-            onClick={onClose}
-          />
-
           <motion.div
-            initial={{ opacity: 0, y: 24, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="relative w-full sm:max-w-md max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-gradient-to-br from-white via-indigo-50/50 to-violet-50/40 dark:from-slate-900 dark:via-indigo-950/50 dark:to-violet-950/40 shadow-2xl shadow-indigo-900/15 px-5 py-5 sm:px-6 sm:py-6"
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 340 }}
+            onClick={(e) => e.stopPropagation()}
+            className="relative flex h-full w-full flex-col overflow-hidden bg-white dark:bg-slate-900 sm:h-auto sm:max-h-[min(90vh,720px)] sm:max-w-[420px] sm:rounded-2xl sm:border sm:border-slate-200/80 sm:shadow-2xl dark:sm:border-slate-700/80"
           >
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-indigo-50/80 to-transparent dark:from-indigo-950/40 sm:rounded-t-2xl" />
+
+            <div className="relative z-10 flex shrink-0 justify-center pt-[max(0.625rem,env(safe-area-inset-top))] pb-1 sm:pt-3">
+              <span
+                className="h-1 w-10 rounded-full bg-slate-300/90 dark:bg-slate-600 sm:hidden"
+                aria-hidden
+              />
+            </div>
+
             <button
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="absolute top-4 right-4 z-10 flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white/90 dark:bg-slate-900/90 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 shadow-sm transition-colors duration-200 cursor-pointer"
+              className="absolute right-4 top-[max(0.625rem,env(safe-area-inset-top))] z-20 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-slate-200/90 bg-white/95 text-slate-500 shadow-sm backdrop-blur-sm transition-colors duration-200 hover:bg-slate-50 hover:text-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-700/90 dark:bg-slate-900/95 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200 dark:focus-visible:ring-offset-slate-900 sm:right-5 sm:top-4"
             >
               <X size={18} strokeWidth={2.25} />
             </button>
 
-            <SectionAccessUnlock
-              embedded
-              batchId={batchId}
-              section={section}
-              subSection={subSection}
-              title={title}
-              description={description}
-              submitLabel={submitLabel}
-              onUnlocked={(session) => {
-                onUnlocked(session);
-                onClose();
-              }}
-            />
+            <div className="custom-scrollbar relative z-10 min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-2 sm:px-6 sm:pb-6 sm:pt-1">
+              <SectionAccessUnlock
+                embedded
+                batchId={batchId}
+                section={section}
+                subSection={subSection}
+                title={title}
+                description={description}
+                submitLabel={submitLabel}
+                onUnlocked={(session) => {
+                  onUnlocked(session);
+                  onClose();
+                }}
+              />
+            </div>
           </motion.div>
         </motion.div>
       )}
