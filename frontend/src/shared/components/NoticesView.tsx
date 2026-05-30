@@ -143,7 +143,7 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
     : null;
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="space-y-6 pb-28 lg:pb-8">
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-6 lg:p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 p-10 opacity-[0.04] dark:opacity-[0.06] pointer-events-none">

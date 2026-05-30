@@ -159,16 +159,27 @@ const SettingsOverlay: React.FC<Props> = ({
               <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800 group/dev">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-900 shadow-md">
-                    <img src="https://avatars.githubusercontent.com/u/205129836?v=4" alt="masud" className="w-full h-full object-cover" />
+                    <img src="https://avatars.githubusercontent.com/u/275231886?v=4" alt="Masud Rana" className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-black text-slate-900 dark:text-white text-sm uppercase truncate">Masud Rana</h4>
-                    <p className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest truncate">Database </p>
+                    <p className="text-[9px] font-black text-emerald-500 dark:text-emerald-400 uppercase tracking-widest truncate">System Design • Backend • Sys Admin</p>
                   </div>
                 </div>
-                <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-tight leading-relaxed mb-4">
-                  AI Integration • DataBase
-                </p>
+                <div className="flex flex-wrap gap-1.5 mb-4">
+                  {[
+                    { label: 'Infrastructure', gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
+                    { label: 'AI Integration', gradient: 'from-teal-500 to-cyan-600', shadow: 'shadow-teal-500/20' },
+                    { label: 'Sys Admin', gradient: 'from-green-600 to-emerald-700', shadow: 'shadow-green-600/20' },
+                  ].map((skill) => (
+                    <span
+                      key={skill.label}
+                      className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wide text-white bg-gradient-to-r ${skill.gradient} shadow-sm ${skill.shadow} ring-1 ring-white/25 dark:ring-white/10`}
+                    >
+                      {skill.label}
+                    </span>
+                  ))}
+                </div>
                 <div className="flex gap-2">
                   <a href="https://www.facebook.com/masudranafaizan/" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
                     <Facebook size={12} /> Facebook

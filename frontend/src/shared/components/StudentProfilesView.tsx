@@ -99,7 +99,7 @@ const StudentProfilesView: React.FC<Props> = ({ batchId, section, isSectionLocke
   }, [searchQuery, resetPage]);
 
   return (
-    <div className="mx-auto w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl px-3 sm:px-4 pb-20 sm:pb-16">
+    <div className="mx-auto w-full max-w-lg sm:max-w-xl md:max-w-2xl lg:max-w-3xl px-3 sm:px-4 pb-28 sm:pb-16 lg:pb-8">
       <div className="relative overflow-hidden bg-indigo-600 rounded-2xl sm:rounded-[2rem] p-5 sm:p-8 text-white shadow-xl shadow-indigo-600/20 mb-6 sm:mb-8">
         <div className="absolute top-0 right-0 w-40 sm:w-48 h-40 sm:h-48 bg-white/10 blur-[80px] rounded-full -mr-16 -mt-16 pointer-events-none" />
         <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
