@@ -1,35 +1,31 @@
+import { offlineCache, offlineCacheKey } from '@/shared/lib/offlineCache';
+import { fetchWithOfflineCache } from '@/shared/lib/offlineFetch';
 import { apiClient } from '@/shared/services/apiClient';
 import type { AcademicCalendarData } from '@/shared/lib/academicCalendarUtils';
 
-const CACHE_KEY = 'diu_tracker_academic_calendar_v2';
+const CACHE_KEY = offlineCacheKey('academic_calendar');
 
 export const academicCalendarService = {
+  async peekCached(): Promise<AcademicCalendarData | null> {
+    return offlineCache.get<AcademicCalendarData>(CACHE_KEY);
+  },
+
   async fetch(): Promise<AcademicCalendarData | null> {
-    try {
-      const cached = localStorage.getItem(CACHE_KEY);
-      if (cached) {
-        try {
-          const parsed = JSON.parse(cached) as AcademicCalendarData;
-          if (parsed?.display_markdown) return parsed;
-        } catch {
-          /* ignore */
-        }
-      }
-      const result = await apiClient.get<AcademicCalendarData>('/academic-calendar');
-      if (result.data) {
-        localStorage.setItem(CACHE_KEY, JSON.stringify(result.data));
+    return fetchWithOfflineCache<AcademicCalendarData>({
+      cacheKey: CACHE_KEY,
+      isValid: (data) => Boolean(data?.display_markdown),
+      fetcher: async () => {
+        const result = await apiClient.get<AcademicCalendarData>('/academic-calendar');
+        if (result.error) throw new Error(result.error);
         return result.data;
-      }
-      return null;
-    } catch {
-      return null;
-    }
+      },
+    });
   },
 
   async save(payload: { title?: string; markdown: string }): Promise<AcademicCalendarData | null> {
     const result = await apiClient.adminPut<AcademicCalendarData>('/admin/portal/academic-calendar', payload);
     if (result.data) {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(result.data));
+      await offlineCache.set(CACHE_KEY, result.data);
       return result.data;
     }
     throw new Error(result.error || 'Failed to save academic calendar');
@@ -38,13 +34,13 @@ export const academicCalendarService = {
   async updateSettings(payload: { show_on_calendar_view: boolean }): Promise<AcademicCalendarData | null> {
     const result = await apiClient.adminPut<AcademicCalendarData>('/admin/portal/academic-calendar', payload);
     if (result.data) {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(result.data));
+      await offlineCache.set(CACHE_KEY, result.data);
       return result.data;
     }
     throw new Error(result.error || 'Failed to update calendar settings');
   },
 
   clearCache() {
-    localStorage.removeItem(CACHE_KEY);
+    void offlineCache.remove(CACHE_KEY);
   },
 };

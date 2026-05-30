@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from database import get_db
 import crud, schemas
+from services.push_tasks import run_notify_record
 
 router = APIRouter(
     tags=["academic records"]
@@ -19,8 +20,14 @@ def read_records(
     return crud.get_records(db, batch_id=batch_id, section=section, sub_section=sub_section)
 
 @router.post("/records", response_model=schemas.AcademicRecordResponse, status_code=status.HTTP_201_CREATED)
-def create_record(record: schemas.AcademicRecordCreate, db: Session = Depends(get_db)):
-    return crud.create_record(db, record)
+def create_record(
+    record: schemas.AcademicRecordCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    created = crud.create_record(db, record)
+    background_tasks.add_task(run_notify_record, created.id)
+    return created
 
 @router.put("/records/{record_id}", response_model=schemas.AcademicRecordResponse)
 def update_record(record_id: str, updates: schemas.AcademicRecordUpdate, db: Session = Depends(get_db)):

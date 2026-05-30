@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
 from database import get_db
 import crud, schemas
+from services.push_tasks import run_notify_notice
 
 router = APIRouter(
     prefix="/notices",
@@ -20,8 +21,14 @@ def read_notices(
     return crud.get_notices(db, batch_id, section, sub_section)
 
 @router.post("", response_model=schemas.NoticeResponse, status_code=status.HTTP_201_CREATED)
-def create_notice(notice: schemas.NoticeCreate, db: Session = Depends(get_db)):
-    return crud.create_notice(db, notice)
+def create_notice(
+    notice: schemas.NoticeCreate,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
+    created = crud.create_notice(db, notice)
+    background_tasks.add_task(run_notify_notice, created.id)
+    return created
 
 @router.put("/{notice_id}", response_model=schemas.NoticeResponse)
 def update_notice(notice_id: str, updates: schemas.NoticeUpdate, db: Session = Depends(get_db)):

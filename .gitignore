@@ -25,11 +25,14 @@ backend/diu_tracker.db
 # --- User uploads (runtime data) ---
 backend/uploads/
 
-# --- Local env / secrets ---
+# --- Local env / secrets (never commit Firebase keys) ---
 .env
 .env.local
 .env.*.local
 backend/.env
+backend/secrets/*
+!backend/secrets/.gitkeep
+!backend/secrets/README.txt
 frontend/.env.local
 
 # --- Docker local overrides ---

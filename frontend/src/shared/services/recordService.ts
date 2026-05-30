@@ -1,28 +1,40 @@
+import { offlineCacheKey } from '@/shared/lib/offlineCache';
+import { fetchWithOfflineCache, peekOfflineCache } from '@/shared/lib/offlineFetch';
 import { apiClient } from './apiClient';
 import { AcademicRecord } from '@/shared/types/types';
 
+function recordsCacheKey(batchId: string, section: string, subSection?: string) {
+  return offlineCacheKey('records', { batchId, section, subSection });
+}
+
 export const recordService = {
+  peekCached(batchId: string, section: string, subSection?: string) {
+    return peekOfflineCache<AcademicRecord[]>(recordsCacheKey(batchId, section, subSection));
+  },
+
   async fetchRecords(
     batchId: string,
     section: string,
-    subSection?: string
+    subSection?: string,
   ): Promise<AcademicRecord[]> {
-    try {
-      let endpoint = `/records?batch_id=${batchId}&section=${section}`;
-      if (subSection) endpoint += `&sub_section=${subSection}`;
-      
-      const result = await apiClient.get<AcademicRecord[]>(endpoint);
-      return result.data || [];
-    } catch (e) {
-      console.error('Error fetching records:', e);
-      return [];
-    }
+    const cacheKey = recordsCacheKey(batchId, section, subSection);
+    const data = await fetchWithOfflineCache<AcademicRecord[]>({
+      cacheKey,
+      fetcher: async () => {
+        let endpoint = `/records?batch_id=${batchId}&section=${section}`;
+        if (subSection) endpoint += `&sub_section=${subSection}`;
+        const result = await apiClient.get<AcademicRecord[]>(endpoint);
+        if (result.error) throw new Error(result.error);
+        return result.data ?? [];
+      },
+    });
+    return data ?? [];
   },
 
   async incrementRecordViews(recordId: string): Promise<void> {
     try {
       await apiClient.post(`/records/${recordId}/views/increment`, {});
-    } catch (e) {
+    } catch {
       // Silently fail for view tracking
     }
   },
@@ -62,5 +74,5 @@ export const recordService = {
       throw new Error(result.error);
     }
     return true;
-  }
+  },
 };

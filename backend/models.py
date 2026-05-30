@@ -376,6 +376,25 @@ class QbSubmissionCache(Base):
     cached_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
 
+class DevicePushToken(Base):
+    """One row per phone install (unique fcm_token). Updated when the app registers with current batch/section."""
+
+    __tablename__ = "device_push_tokens"
+    __table_args__ = (UniqueConstraint("fcm_token", name="uq_device_push_tokens_fcm_token"),)
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=generate_uuid)
+    fcm_token: Mapped[str] = mapped_column(String(512), nullable=False)
+    user_id: Mapped[Optional[str]] = mapped_column(
+        String, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
+    batch_id: Mapped[str] = mapped_column(String, ForeignKey("batches.id", ondelete="CASCADE"), nullable=False)
+    section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    sub_section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    platform: Mapped[str] = mapped_column(String, default="android", nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
 class AcademicCalendar(Base):
     """Singleton institutional academic calendar (markdown + parsed events)."""
 

@@ -31,16 +31,10 @@ import { studentService } from '@/shared/services/studentService';
 import { authService } from '@/shared/services/authService';
 import { academicCalendarService } from '@/shared/services/academicCalendarService';
 import type { AcademicCalendarData } from '@/shared/lib/academicCalendarUtils';
-const App: React.FC = () => {
-  useEffect(() => {
-    // Using dynamic import to prevent build-time resolution errors on Vercel
-    import('@vercel/analytics').then(({ inject }) => {
-      inject();
-    }).catch(err => {
-      console.warn('Vercel Analytics could not be loaded during build:', err);
-    });
-  }, []);
+import { fetchWithOfflineCache } from '@/shared/lib/offlineFetch';
+import { offlineCacheKey } from '@/shared/lib/offlineCache';
 
+const App: React.FC = () => {
   const { profile, logout: authLogout } = useAuth();
   const [showSplash, setShowSplash] = useState(() => {
     const path = window.location.pathname;
@@ -78,10 +72,47 @@ const App: React.FC = () => {
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const onPushNavigate = (event: Event) => {
+      const detail = (event as CustomEvent<Record<string, string>>).detail ?? {};
+      const kind = detail.kind ?? '';
+      const recordType = detail.record_type ?? '';
+      if (kind === 'notice' || recordType === 'Announcement') {
+        navigate('/dashboard/notices');
+      } else if (kind === 'deadline' || recordType.includes('Deadline')) {
+        navigate('/dashboard/overview');
+      } else if (detail.course_id) {
+        navigate(`/dashboard/courses/${detail.course_id}`);
+      } else {
+        navigate('/dashboard/courses');
+      }
+    };
+    window.addEventListener('diu-push-navigate', onPushNavigate);
+    return () => window.removeEventListener('diu-push-navigate', onPushNavigate);
+  }, [navigate]);
+
   const playNotificationSound = () => {
     const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3');
     audio.play().catch(e => console.warn('Audio play blocked:', e));
   };
+
+  const refreshSectionData = React.useCallback(async () => {
+    if (!selectedBatch || !selectedSection) return;
+    const section = selectedSection;
+    const sub = selectedSubSection || undefined;
+    const [nextRecords, nextCourses, nextNotices, nextDeadlines, nextCalendar] = await Promise.all([
+      recordService.fetchRecords(selectedBatch, section, sub),
+      courseService.fetchCourses(selectedBatch, section),
+      noticeService.fetchNotices(selectedBatch, section, sub),
+      deadlineService.fetchDeadlines(selectedBatch, section, sub),
+      academicCalendarService.fetch(),
+    ]);
+    setRecords(nextRecords);
+    setCourses(nextCourses);
+    setNotices(nextNotices);
+    setDeadlines(nextDeadlines);
+    setAcademicCalendar(nextCalendar);
+  }, [selectedBatch, selectedSection, selectedSubSection]);
 
   // Network Status Monitoring
   useEffect(() => {
@@ -93,21 +124,15 @@ const App: React.FC = () => {
 
     const handler = Network.addListener('networkStatusChange', status => {
       setIsOffline(!status.connected);
-      if (status.connected) {
-        // Refresh data when net comes back
-        if (selectedBatch) {
-          recordService.fetchRecords(selectedBatch, selectedSection || 'A').then(setRecords);
-          courseService.fetchCourses(selectedBatch, selectedSection || undefined).then(setCourses);
-          noticeService.fetchNotices(selectedBatch, selectedSection || undefined).then(setNotices);
-          deadlineService.fetchDeadlines(selectedBatch).then(setDeadlines);
-        }
+      if (status.connected && selectedBatch && selectedSection) {
+        void refreshSectionData();
       }
     });
 
     return () => {
       handler.then(h => h.remove());
     };
-  }, [selectedBatch, selectedSection]);
+  }, [selectedBatch, selectedSection, selectedSubSection, refreshSectionData]);
 
   // Handle Android Hardware Back Button
   const lastBackPress = React.useRef<number>(0);
@@ -171,11 +196,21 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // Load Initial Data (Batches)
+  // Load Initial Data (Batches) — cached for offline batch picker
   useEffect(() => {
-    apiClient.get<Batch[]>('/batches').then(result => {
-      if (result.data) setBatches(result.data);
-    });
+    let cancelled = false;
+    (async () => {
+      const cached = await fetchWithOfflineCache<Batch[]>({
+        cacheKey: offlineCacheKey('batches'),
+        fetcher: async () => {
+          const result = await apiClient.get<Batch[]>('/batches');
+          if (result.error) throw new Error(result.error);
+          return result.data ?? [];
+        },
+      });
+      if (!cancelled && cached) setBatches(cached);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   // Sync with Profile when it changes
@@ -211,63 +246,74 @@ const App: React.FC = () => {
     localStorage.setItem('readNotificationIds', JSON.stringify(readIds));
   }, [readIds]);
 
-  // Records Sync
+  // Records — stale-while-revalidate (IndexedDB, max 100MB)
   useEffect(() => {
-    if (selectedSection && selectedBatch) {
-      // 1. Optimistic Cache Load (Instant UI)
-      try {
-        const cacheKey = `diu_tracker_cache_records_${JSON.stringify({ batchId: selectedBatch, section: selectedSection, subSection: selectedSubSection || undefined })}`;
-        const cachedData = localStorage.getItem(cacheKey);
-        if (cachedData) setRecords(JSON.parse(cachedData));
-      } catch (e) { console.warn('Cache read error', e); }
+    if (!selectedSection || !selectedBatch) return;
 
-      // 2. Network Fetch
-      const load = async () => {
-        const data = await recordService.fetchRecords(selectedBatch, selectedSection, selectedSubSection || undefined);
-        setRecords(data);
-        try {
-          const cacheKey = `diu_tracker_cache_records_${JSON.stringify({ batchId: selectedBatch, section: selectedSection, subSection: selectedSubSection || undefined })}`;
-          localStorage.setItem(cacheKey, JSON.stringify(data));
-        } catch (e) { console.warn('Cache write error', e); }
-      };
-      load();
-      
-      // Initialize Push Notifications
-      initPushNotifications(profile?.id, selectedBatch, selectedSection);
+    let cancelled = false;
+    const sub = selectedSubSection || undefined;
 
-      // Realtime disabled for local API - can be added via WebSocket later
-    }
-  }, [selectedBatch, selectedSection, selectedSubSection]);
+    (async () => {
+      const cached = await recordService.peekCached(selectedBatch, selectedSection, sub);
+      if (!cancelled && cached) setRecords(cached);
+
+      const data = await recordService.fetchRecords(selectedBatch, selectedSection, sub);
+      if (!cancelled) setRecords(data);
+    })();
+
+    initPushNotifications(
+      profile?.id,
+      selectedBatch,
+      selectedSection,
+      sub,
+    );
+
+    return () => { cancelled = true; };
+  }, [selectedBatch, selectedSection, selectedSubSection, profile?.id]);
 
   useEffect(() => {
-    academicCalendarService.fetch().then(setAcademicCalendar);
+    let cancelled = false;
+    (async () => {
+      const cached = await academicCalendarService.peekCached();
+      if (!cancelled && cached) setAcademicCalendar(cached);
+      const data = await academicCalendarService.fetch();
+      if (!cancelled) setAcademicCalendar(data);
+    })();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
-    if (!selectedBatch) return;
-      // 1. Optimistic Cache Load (Instant UI)
-      try {
-        const coursesKey = `diu_tracker_cache_courses_${JSON.stringify({ batchId: selectedBatch, section: selectedSection || undefined })}`;
-        const cachedCourses = localStorage.getItem(coursesKey);
-        if (cachedCourses) setCourses(JSON.parse(cachedCourses));
+    if (!selectedBatch || !selectedSection) return;
 
-        const params = { batchId: selectedBatch, section: selectedSection || undefined, subSection: selectedSubSection || undefined };
-        
-        const noticesKey = `diu_tracker_cache_notices_${JSON.stringify(params)}`;
-        const cachedNotices = localStorage.getItem(noticesKey);
-        if (cachedNotices) setNotices(JSON.parse(cachedNotices));
+    let cancelled = false;
+    const section = selectedSection;
+    const sub = selectedSubSection || undefined;
 
-        const deadlinesKey = `diu_tracker_cache_deadlines_${JSON.stringify(params)}`;
-        const cachedDeadlines = localStorage.getItem(deadlinesKey);
-        if (cachedDeadlines) setDeadlines(JSON.parse(cachedDeadlines));
-      } catch (e) { console.warn('Cache read error', e); }
+    (async () => {
+      const [cachedCourses, cachedNotices, cachedDeadlines] = await Promise.all([
+        courseService.peekCached(selectedBatch, section),
+        noticeService.peekCached(selectedBatch, section, sub),
+        deadlineService.peekCached(selectedBatch, section, sub),
+      ]);
+      if (!cancelled) {
+        if (cachedCourses) setCourses(cachedCourses);
+        if (cachedNotices) setNotices(cachedNotices);
+        if (cachedDeadlines) setDeadlines(cachedDeadlines);
+      }
 
-      // 2. Network Fetch (Background Sync)
-      courseService.fetchCourses(selectedBatch, selectedSection || undefined).then(setCourses);
-      noticeService.fetchNotices(selectedBatch, selectedSection || undefined, selectedSubSection || undefined).then(setNotices);
-      deadlineService.fetchDeadlines(selectedBatch, selectedSection || undefined, selectedSubSection || undefined).then(data => {
-        setDeadlines(data);
-      });
+      const [courses, notices, deadlines] = await Promise.all([
+        courseService.fetchCourses(selectedBatch, section),
+        noticeService.fetchNotices(selectedBatch, section, sub),
+        deadlineService.fetchDeadlines(selectedBatch, section, sub),
+      ]);
+      if (!cancelled) {
+        setCourses(courses);
+        setNotices(notices);
+        setDeadlines(deadlines);
+      }
+    })();
+
+    return () => { cancelled = true; };
   }, [selectedBatch, selectedSection, selectedSubSection]);
 
   const notifications = useMemo(() => {

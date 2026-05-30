@@ -647,3 +647,17 @@ class AcademicCalendarUpdate(BaseModel):
     title: Optional[str] = None
     markdown: Optional[str] = None
     show_on_calendar_view: Optional[bool] = None
+
+
+# --- Push (FCM) ---
+class PushTokenRegister(BaseModel):
+    fcm_token: str
+    batch_id: str
+    section: Optional[str] = None
+    sub_section: Optional[str] = None
+    user_id: Optional[str] = None
+    platform: Optional[str] = "android"
+
+
+class PushTokenUnregister(BaseModel):
+    fcm_token: str

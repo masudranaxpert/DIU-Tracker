@@ -13,6 +13,9 @@ import '@fontsource/roboto/700.css';
 import { BrowserRouter } from 'react-router-dom';
 
 import { AuthProvider } from '@/app/providers/AuthProvider';
+import { offlineCache } from '@/shared/lib/offlineCache';
+
+void offlineCache.init();
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {

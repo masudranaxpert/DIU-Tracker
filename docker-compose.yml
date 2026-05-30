@@ -50,11 +50,14 @@ services:
       SMTP_USER: ${SMTP_USER:-}
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-}
+      FCM_ENABLED: ${FCM_ENABLED:-true}
+      FCM_CREDENTIALS_PATH: ${FCM_CREDENTIALS_PATH:-secrets/firebase-service-account.json}
     # Backend is reachable only inside the compose network (via Caddy), not published.
     expose:
       - "8000"
     volumes:
       - backend_uploads:/app/uploads
+      - ./backend/secrets:/app/secrets:ro
     depends_on:
       db:
         condition: service_healthy

@@ -1,6 +1,10 @@
 import contextlib
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -14,6 +18,7 @@ from routers import (
     students, teachers, admin_auth, admin_portal, rclone, drive, user_auth, section_pins, uploads,
     qbank,
     academic_calendar,
+    push,
 )
 from commands import run_cli
 
@@ -70,6 +75,7 @@ app.include_router(qbank.router)
 app.include_router(rclone.router)
 app.include_router(drive.router)
 app.include_router(academic_calendar.router)
+app.include_router(push.router)
 
 ensure_upload_dirs()
 _avatars_dir = Path(__file__).resolve().parent / "uploads" / "avatars"
