@@ -854,6 +854,11 @@ const MainDashboard: React.FC<Props> = ({
                                                 </div>
                                             ))
                                         )}
+                                        {notifications.length >= 30 && (
+                                            <p className="py-3 text-center text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                                                Showing latest 30
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             )}

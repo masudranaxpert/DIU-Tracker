@@ -159,7 +159,7 @@ const SettingsOverlay: React.FC<Props> = ({
               <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 group/dev">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-900 shadow-md">
-                    <img src="https://avatars.githubusercontent.com/u/275231886?v=4" alt="Masud Rana" className="w-full h-full object-cover" />
+                    <img src="https://i.postimg.cc/FH72qK1K/IMG-20251123-WA0028.jpg" alt="Masud Rana" className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
                     <h4 className="font-black text-slate-900 dark:text-white text-sm uppercase truncate">Masud Rana</h4>

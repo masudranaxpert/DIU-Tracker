@@ -335,7 +335,7 @@ const App: React.FC = () => {
 
     return [...recordNotifs, ...noticeNotifs, ...deadlineNotifs]
       .sort((a, b) => b.sortDate - a.sortDate)
-      .slice(0, 15);
+      .slice(0, 30);
   }, [records, notices, deadlines, selectedSection, readIds, courses]);
 
   const markAsRead = (id: string) => {
