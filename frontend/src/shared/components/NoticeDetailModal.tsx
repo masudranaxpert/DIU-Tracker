@@ -82,15 +82,17 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex flex-col justify-end sm:justify-center sm:items-center sm:p-4 bg-slate-950/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex flex-col sm:items-center sm:justify-center sm:p-4 bg-slate-950/60 backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="notice-modal-title"
     >
-      {/* Mobile: tap dim area above sheet to close — no empty gap inside the sheet */}
+      {/* Mobile: small tap area above sheet (backdrop) — not a broken empty gap */}
+      <div className="flex-1 min-h-[6dvh] sm:hidden w-full" aria-hidden />
+
       <div
-        className="w-full sm:max-w-md flex flex-col max-h-[92dvh] sm:max-h-[90vh] bg-white dark:bg-slate-900 sm:rounded-2xl rounded-t-[1.35rem] shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:shadow-2xl border border-slate-200/80 dark:border-slate-700 overflow-hidden"
+        className="w-full sm:max-w-md flex flex-col h-[92dvh] sm:h-auto sm:max-h-[90vh] bg-white dark:bg-slate-900 sm:rounded-2xl rounded-t-[1.35rem] shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:shadow-2xl border border-slate-200/80 dark:border-slate-700 overflow-hidden shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — gradient starts at very top; handle lives inside (no white strip) */}
@@ -107,10 +109,10 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-0 right-3 sm:top-3 sm:right-4 w-9 h-9 flex items-center justify-center rounded-full bg-black/20 hover:bg-black/30 active:bg-black/35 transition-colors duration-200 cursor-pointer backdrop-blur-sm"
+              className="absolute top-2 right-3 sm:top-3 sm:right-4 w-9 h-9 flex items-center justify-center rounded-full bg-white/30 hover:bg-white/45 active:bg-white/50 text-white ring-1 ring-white/50 backdrop-blur-md transition-colors duration-200 cursor-pointer shadow-sm"
               aria-label="Close"
             >
-              <X size={18} />
+              <X size={18} strokeWidth={2.5} />
             </button>
 
             <div className="flex items-start gap-3 pr-11">
@@ -208,11 +210,11 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 px-4 sm:px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="shrink-0 mt-auto px-4 sm:px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:pb-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-3 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-semibold rounded-xl text-sm transition-all duration-200 cursor-pointer active:scale-[0.99] shadow-md shadow-indigo-500/20"
+            className="w-full py-3 bg-slate-900 dark:bg-slate-100 hover:bg-slate-800 dark:hover:bg-white text-white dark:text-slate-900 font-semibold rounded-xl text-sm transition-colors duration-200 cursor-pointer"
           >
             Close
           </button>
