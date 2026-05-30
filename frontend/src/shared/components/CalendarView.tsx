@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   format,
   addMonths,
@@ -137,10 +137,16 @@ const CalendarView: React.FC<CalendarViewProps> = ({
   onDateSelect,
   onAction,
   onNavigateToAcademicCalendar,
+  isDayDetailOpen,
+  setIsDayDetailOpen,
 }) => {
   const dialog = useDialogStore();
   const [currentDate, setCurrentDate] = useState(selectedDate);
   const [viewMode, setViewMode] = useState<'GRID' | 'LIST'>('GRID');
+
+  useEffect(() => {
+    setCurrentDate(selectedDate);
+  }, [selectedDate]);
 
   const monthStart = startOfMonth(currentDate);
   const monthEnd = endOfMonth(monthStart);
@@ -165,6 +171,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
     const today = new Date();
     setCurrentDate(today);
     onDateSelect(today);
+  };
+
+  const selectDayFromList = (day: Date) => {
+    setCurrentDate(day);
+    onDateSelect(day);
+    setViewMode('GRID');
+    setIsDayDetailOpen?.(true);
   };
 
   const selectedDayEvents = useMemo(() => getDayEvents(selectedDate), [selectedDate, records, deadlines, academicEvents]);
@@ -390,16 +403,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 List
               </button>
             </div>
-
-            {academicEvents.length > 0 && (
-              <div
-                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-800/40"
-                title="Academic calendar events"
-                aria-label="Academic calendar events"
-              >
-                <span className={`w-2 h-2 rounded-full ${ACADEMIC_TEAL.dot}`} />
-              </div>
-            )}
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-3 lg:gap-4">
@@ -420,7 +423,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
           </div>
         </div>
 
-        {/* Days Header */}
+        {/* Days Header — grid only */}
+        {viewMode === 'GRID' && (
         <div className="grid grid-cols-7 bg-white dark:bg-slate-950 border-b border-slate-200/60 dark:border-slate-800/60">
           {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
             <div key={day} className="py-3 lg:py-5 text-center text-[8px] lg:text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-[0.2em] lg:tracking-[0.4em]">
@@ -428,6 +432,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
           ))}
         </div>
+        )}
 
         <div className="flex-1 overflow-y-auto custom-scrollbar bg-slate-50/70 dark:bg-slate-900/10 p-2 lg:p-4">
           <AnimatePresence mode="wait">
@@ -527,31 +532,47 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 <motion.div key="list" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-2 lg:p-8 space-y-8 lg:space-y-12 max-w-4xl mx-auto">
                   {activeMonthDaysWithEvents.map((day) => {
                     const { dayRecords, dayDeadlines, dayAcademic } = getDayEvents(day);
+                    const isSelected = isSameDay(day, selectedDate);
                     return (
                       <div key={day.toISOString()} className="flex gap-4 lg:gap-8 relative group/list">
                         <div className="absolute left-[1.1rem] lg:left-[1.5rem] top-8 bottom-0 w-[1px] bg-slate-100 dark:bg-slate-800" />
-                        <div className="w-10 lg:w-12 shrink-0 flex flex-col items-center">
+                        <button
+                          type="button"
+                          onClick={() => selectDayFromList(day)}
+                          className={`w-10 lg:w-12 shrink-0 flex flex-col items-center rounded-xl py-1 transition-colors cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-950/30 ${isSelected ? 'bg-indigo-50 dark:bg-indigo-950/40 ring-2 ring-indigo-500/30' : ''}`}
+                          aria-label={`Go to ${format(day, 'MMMM d, yyyy')}`}
+                        >
                           <span className="text-[6px] lg:text-[7px] font-black text-slate-400 uppercase tracking-widest">{format(day, 'EEE')}</span>
-                          <span className={`text-xl lg:text-2xl font-black ${isToday(day) ? 'text-indigo-600' : 'text-slate-900 dark:text-white'}`}>{format(day, 'dd')}</span>
-                        </div>
+                          <span className={`text-xl lg:text-2xl font-black ${isToday(day) ? 'text-indigo-600' : isSelected ? 'text-indigo-600' : 'text-slate-900 dark:text-white'}`}>{format(day, 'dd')}</span>
+                        </button>
                         <div className="flex-1 space-y-3 lg:space-y-4">
                           {dayAcademic.map(e => (
-                            <div key={e.id} className={`flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl ${ACADEMIC_TEAL.panelBg} border ${ACADEMIC_TEAL.panelBorder} shadow-sm`}>
+                            <button
+                              key={e.id}
+                              type="button"
+                              onClick={() => selectDayFromList(day)}
+                              className={`w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl ${ACADEMIC_TEAL.panelBg} border ${ACADEMIC_TEAL.panelBorder} shadow-sm text-left cursor-pointer hover:border-teal-400/60 dark:hover:border-teal-600/50 transition-colors`}
+                            >
                               <div className={`w-1 lg:w-1.5 h-6 lg:h-8 rounded-full bg-gradient-to-b ${ACADEMIC_TEAL.iconGrad}`} />
                               <div className="flex-1">
                                 <h4 className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white leading-snug">{e.title}</h4>
                               </div>
-                            </div>
+                            </button>
                           ))}
                           {dayDeadlines.map(d => (
-                            <div key={d.id} className="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm">
+                            <button
+                              key={d.id}
+                              type="button"
+                              onClick={() => selectDayFromList(day)}
+                              className="w-full flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm text-left cursor-pointer hover:border-rose-200 dark:hover:border-rose-900/40 transition-colors"
+                            >
                               <div className={`w-1 lg:w-1.5 h-6 lg:h-8 rounded-full bg-gradient-to-b ${DEADLINE_COLORS[d.type] || 'from-indigo-500 to-indigo-700'}`} />
                               <div className="flex-1">
                                 <span className="text-[6px] lg:text-[7px] font-black text-rose-500 uppercase tracking-widest">{d.type}</span>
                                 <h4 className="text-xs lg:text-sm font-black text-slate-900 dark:text-white uppercase leading-none">{d.title}</h4>
                               </div>
                               <Flag size={14} className="text-slate-300 lg:w-4 lg:h-4" />
-                            </div>
+                            </button>
                           ))}
                           {dayRecords.map(r => (
                             <div key={r.id} onClick={() => onAction('record', r.id)} className="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200/60 dark:border-slate-800 shadow-sm cursor-pointer hover:border-indigo-200 transition-colors">
