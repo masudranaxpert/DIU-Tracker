@@ -30,7 +30,6 @@ backend/uploads/
 .env.local
 .env.*.local
 backend/.env
-backend/secrets/*
 !backend/secrets/.gitkeep
 !backend/secrets/README.txt
 frontend/.env.local
