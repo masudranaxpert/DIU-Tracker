@@ -22,6 +22,8 @@ import {
 import { format } from 'date-fns';
 
 import { apiClient } from '@/shared/services/apiClient';
+import QbankPdfViewerModal from '@/shared/components/QbankPdfViewerModal';
+import { isNativeApp } from '@/shared/lib/nativeApp';
 
 type QbQuestion = {
   question_external_id: number;
@@ -218,6 +220,7 @@ const QuestionBankView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [subs, setSubs] = useState<Record<number, SubmissionState>>({});
+  const [pdfPreview, setPdfPreview] = useState<{ url: string; title: string } | null>(null);
   const pollTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const activeCount = [department, course, semester, examType].filter(
@@ -238,7 +241,7 @@ const QuestionBankView: React.FC = () => {
 
       if (options?.force) {
         try {
-          await apiClient.post(`/qbank/questions/${questionId}/submissions/refresh`);
+          await apiClient.post(`/qbank/questions/${questionId}/submissions/refresh`, {});
         } catch {
           setSubs((current) => ({
             ...current,
@@ -563,19 +566,47 @@ const QuestionBankView: React.FC = () => {
                         </div>
                       ) : state && state.items.length > 0 ? (
                         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                          {state.items.map((submission, index) => (
-                            <a
-                              key={submission.id}
-                              href={submission.pdf_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              title={submission.section || submission.uploader || `PDF ${index + 1}`}
-                              className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-600 hover:text-white dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-300 dark:hover:bg-indigo-600 dark:hover:text-white"
-                            >
-                              <FileText size={13} />
-                              View {String(index + 1).padStart(2, '0')}
-                            </a>
-                          ))}
+                          {state.items.map((submission, index) => {
+                            const viewLabel = `View ${String(index + 1).padStart(2, '0')}`;
+                            const viewTitle =
+                              submission.section || submission.uploader || `PDF ${index + 1}`;
+                            const viewClassName =
+                              'inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-600 hover:text-white dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-300 dark:hover:bg-indigo-600 dark:hover:text-white cursor-pointer';
+
+                            if (isNativeApp()) {
+                              return (
+                                <button
+                                  key={submission.id}
+                                  type="button"
+                                  title={viewTitle}
+                                  onClick={() =>
+                                    setPdfPreview({
+                                      url: submission.pdf_url,
+                                      title: viewTitle,
+                                    })
+                                  }
+                                  className={viewClassName}
+                                >
+                                  <FileText size={13} />
+                                  {viewLabel}
+                                </button>
+                              );
+                            }
+
+                            return (
+                              <a
+                                key={submission.id}
+                                href={submission.pdf_url}
+                                target="_blank"
+                                rel="noreferrer"
+                                title={viewTitle}
+                                className={viewClassName}
+                              >
+                                <FileText size={13} />
+                                {viewLabel}
+                              </a>
+                            );
+                          })}
                         </div>
                       ) : (
                         <p className="py-2 text-center text-xs font-semibold text-slate-500 dark:text-slate-400">
@@ -614,6 +645,15 @@ const QuestionBankView: React.FC = () => {
           </div>
         )}
       </div>
+
+      {isNativeApp() && (
+        <QbankPdfViewerModal
+          open={Boolean(pdfPreview)}
+          pdfUrl={pdfPreview?.url ?? ''}
+          title={pdfPreview?.title}
+          onClose={() => setPdfPreview(null)}
+        />
+      )}
     </div>
   );
 };
