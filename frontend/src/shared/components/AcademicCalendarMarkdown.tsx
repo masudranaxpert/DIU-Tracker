@@ -4,19 +4,27 @@ import { stripEventsBlock } from '@/shared/lib/academicCalendarUtils';
 interface Props {
   markdown: string;
   className?: string;
+  variant?: 'default' | 'footnotes';
 }
 
 /** Lightweight markdown renderer for academic calendar (tables, headings, lists). */
-const AcademicCalendarMarkdown: React.FC<Props> = ({ markdown, className = '' }) => {
-  const html = useMemo(() => renderMarkdown(stripEventsBlock(markdown)), [markdown]);
+const AcademicCalendarMarkdown: React.FC<Props> = ({ markdown, className = '', variant = 'default' }) => {
+  const html = useMemo(() => renderMarkdown(stripEventsBlock(markdown), variant), [markdown, variant]);
 
   return (
     <article
-      className={`academic-calendar-md prose prose-slate dark:prose-invert max-w-none ${className}`}
+      className={`academic-calendar-md prose prose-slate dark:prose-invert max-w-none ${variant === 'footnotes' ? 'academic-calendar-footnotes' : ''} ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );
 };
+
+function normalizeMarkdownText(text: string): string {
+  return text
+    .replace(/\\\*\\\*/g, '**')
+    .replace(/\\\*/g, '*')
+    .replace(/\\-/g, '-');
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -27,14 +35,15 @@ function escapeHtml(text: string): string {
 }
 
 function inlineFormat(text: string): string {
-  return escapeHtml(text)
+  const normalized = normalizeMarkdownText(text);
+  return escapeHtml(normalized)
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, '<em>$1</em>')
     .replace(/`([^`]+)`/g, '<code>$1</code>');
 }
 
-function renderMarkdown(source: string): string {
-  const lines = source.replace(/\r\n/g, '\n').split('\n');
+function renderMarkdown(source: string, variant: 'default' | 'footnotes' = 'default'): string {
+  const lines = normalizeMarkdownText(source).replace(/\r\n/g, '\n').split('\n');
   const out: string[] = [];
   let i = 0;
   let inCode = false;
@@ -75,13 +84,15 @@ function renderMarkdown(source: string): string {
       continue;
     }
 
-    if (/^[-*]\s/.test(line.trim())) {
+    if (/^[-*]\s/.test(line.trim()) || /^\*\s/.test(line.trim())) {
       const items: string[] = [];
-      while (i < lines.length && /^[-*]\s/.test(lines[i].trim())) {
-        items.push(`<li>${inlineFormat(lines[i].trim().replace(/^[-*]\s*/, ''))}</li>`);
+      while (i < lines.length && (/^[-*]\s/.test(lines[i].trim()) || /^\*\s/.test(lines[i].trim()))) {
+        const raw = lines[i].trim().replace(/^[-*]\s*/, '');
+        items.push(`<li>${inlineFormat(raw)}</li>`);
         i += 1;
       }
-      out.push(`<ul>${items.join('')}</ul>`);
+      const tag = variant === 'footnotes' ? 'ul class="footnote-list"' : 'ul';
+      out.push(`<${tag}>${items.join('')}</ul>`);
       continue;
     }
 

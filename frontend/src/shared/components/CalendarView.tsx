@@ -35,7 +35,6 @@ import type { AcademicCalendarEvent } from '@/shared/lib/academicCalendarUtils';
 import {
   ACADEMIC_EVENT_TYPE_LABELS,
   eventOccursOnDay,
-  getAcademicEventStyle,
   parseLocalCalendarDate,
 } from '@/shared/lib/academicCalendarUtils';
 // jspdf + autotable are heavy — load only when exporting a PDF.
@@ -99,6 +98,21 @@ const DEADLINE_COLORS: Record<string, string> = {
   'ASSIGNMENT': 'from-indigo-500 to-indigo-700',
   'PROJECT': 'from-emerald-500 to-emerald-700',
   'LAB_FINAL': 'from-violet-500 to-violet-700',
+};
+
+/** Teal = university academic calendar (distinct from indigo records & deadline gradients) */
+const ACADEMIC_TEAL = {
+  dot: 'bg-teal-500',
+  dotShadow: 'shadow-teal-400/40',
+  gridChip: 'bg-gradient-to-br from-teal-400 to-teal-600 text-white',
+  panelBg: 'bg-teal-50/80 dark:bg-teal-950/25',
+  panelBorder: 'border-teal-200/70 dark:border-teal-800/50',
+  label: 'text-teal-700 dark:text-teal-300',
+  header: 'text-teal-800 dark:text-teal-300',
+  headerBorder: 'border-teal-200 dark:border-teal-800/50',
+  typeChip: 'bg-teal-100 text-teal-800 dark:bg-teal-900/50 dark:text-teal-200',
+  iconGrad: 'from-teal-500 to-cyan-600',
+  btn: 'border-teal-200 dark:border-teal-800 text-teal-800 dark:text-teal-300 hover:bg-teal-100/70 dark:hover:bg-teal-950/40',
 };
 
 const parseLocalDate = (dateStr: string) => {
@@ -376,6 +390,13 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 List
               </button>
             </div>
+
+            {academicEvents.length > 0 && (
+              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-800/40">
+                <span className={`w-2 h-2 rounded-full ${ACADEMIC_TEAL.dot}`} />
+                <span className={`text-[8px] font-bold uppercase tracking-wider ${ACADEMIC_TEAL.label}`}>University Calendar</span>
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between sm:justify-end gap-3 lg:gap-4">
@@ -446,7 +467,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
 
                         {hasAcademic && isCurMonth && (
                           <div
-                            className="absolute top-0.5 right-0.5 w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full bg-amber-400 border border-white dark:border-slate-900 shadow-sm shadow-amber-400/40"
+                            className={`absolute top-0.5 right-0.5 w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full ${ACADEMIC_TEAL.dot} border border-white dark:border-slate-900 shadow-sm ${ACADEMIC_TEAL.dotShadow}`}
                             title="University academic calendar event"
                           />
                         )}
@@ -464,7 +485,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         {dayAcademic.slice(0, 1).map(e => (
                           <div
                             key={e.id}
-                            className="px-0.5 lg:px-1 py-0.5 rounded-[2px] lg:rounded-[3px] text-[4.5px] sm:text-[5.5px] lg:text-[6.5px] font-black uppercase text-amber-950 truncate shadow-sm bg-gradient-to-br from-amber-300 to-amber-500"
+                            className={`px-0.5 lg:px-1 py-0.5 rounded-[2px] lg:rounded-[3px] text-[4.5px] sm:text-[5.5px] lg:text-[6.5px] font-black uppercase truncate shadow-sm ${ACADEMIC_TEAL.gridChip}`}
                             title={e.title}
                           >
                             {e.title}
@@ -512,10 +533,10 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         </div>
                         <div className="flex-1 space-y-3 lg:space-y-4">
                           {dayAcademic.map(e => (
-                            <div key={e.id} className="flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 shadow-sm">
-                              <div className="w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center shrink-0 text-white text-[8px] font-black">U</div>
+                            <div key={e.id} className={`flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl ${ACADEMIC_TEAL.panelBg} border ${ACADEMIC_TEAL.panelBorder} shadow-sm`}>
+                              <div className={`w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-gradient-to-br ${ACADEMIC_TEAL.iconGrad} flex items-center justify-center shrink-0 text-white text-[8px] font-black`}>U</div>
                               <div className="flex-1">
-                                <span className="text-[6px] lg:text-[7px] font-black text-amber-700 dark:text-amber-400 uppercase tracking-widest">University Calendar</span>
+                                <span className={`text-[6px] lg:text-[7px] font-black ${ACADEMIC_TEAL.label} uppercase tracking-widest`}>University Calendar</span>
                                 <h4 className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white leading-snug">{e.title}</h4>
                               </div>
                             </div>
@@ -598,22 +619,21 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="flex-1 overflow-y-auto lg:overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-10 relative z-10">
           {selectedDayEvents.dayAcademic.length > 0 && (
             <section>
-              <div className="flex items-center justify-between mb-4 border-b border-amber-200 dark:border-amber-900/40 pb-2">
-                <h5 className="text-[8px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest">## University Calendar</h5>
-                <div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
+              <div className={`flex items-center justify-between mb-4 border-b ${ACADEMIC_TEAL.headerBorder} pb-2`}>
+                <h5 className={`text-[8px] font-black ${ACADEMIC_TEAL.header} uppercase tracking-widest`}>## University Calendar</h5>
+                <div className={`w-2 h-2 rounded-full ${ACADEMIC_TEAL.dot} shadow-sm ${ACADEMIC_TEAL.dotShadow}`} />
               </div>
               <div className="space-y-3">
                 {selectedDayEvents.dayAcademic.map(event => {
-                  const style = getAcademicEventStyle(event.type);
                   const start = parseLocalCalendarDate(event.start);
                   const end = parseLocalCalendarDate(event.end || event.start);
                   const isRange = event.end && event.end !== event.start;
                   return (
                     <div
                       key={event.id}
-                      className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/40 shadow-sm"
+                      className={`p-4 rounded-2xl ${ACADEMIC_TEAL.panelBg} border ${ACADEMIC_TEAL.panelBorder} shadow-sm`}
                     >
-                      <span className={`inline-block px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest mb-2 ${style.chip}`}>
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[7px] font-black uppercase tracking-widest mb-2 ${ACADEMIC_TEAL.typeChip}`}>
                         {ACADEMIC_EVENT_TYPE_LABELS[event.type] || 'Academic'}
                       </span>
                       <h6 className="text-sm font-bold text-slate-900 dark:text-white leading-snug mb-1.5">{event.title}</h6>
@@ -631,7 +651,7 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                 <button
                   type="button"
                   onClick={onNavigateToAcademicCalendar}
-                  className="mt-3 w-full py-2.5 rounded-xl border border-amber-200 dark:border-amber-800 text-[9px] font-bold uppercase tracking-widest text-amber-800 dark:text-amber-300 hover:bg-amber-100/60 dark:hover:bg-amber-950/30 transition-colors cursor-pointer"
+                  className={`mt-3 w-full py-2.5 rounded-xl border ${ACADEMIC_TEAL.btn} text-[9px] font-bold uppercase tracking-widest transition-colors cursor-pointer`}
                 >
                   View full academic calendar
                 </button>

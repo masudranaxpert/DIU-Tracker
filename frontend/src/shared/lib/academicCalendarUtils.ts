@@ -151,3 +151,109 @@ export const ACADEMIC_EVENT_COLORS: Record<string, { chip: string; dot: string; 
 export function getAcademicEventStyle(type: string) {
   return ACADEMIC_EVENT_COLORS[type] || ACADEMIC_EVENT_COLORS.other;
 }
+
+export type SemesterKey = 'spring' | 'summer' | 'fall';
+
+export interface CalendarSemesterSection {
+  key: SemesterKey;
+  title: string;
+  markdown: string;
+}
+
+export interface ParsedCalendarSections {
+  intro: string;
+  semesters: CalendarSemesterSection[];
+  footnotes: string;
+}
+
+const SEMESTER_HEADING_RE = /^##\s*(Spring|Summer|Fall)\b/i;
+
+export function parseCalendarSections(markdown: string): ParsedCalendarSections {
+  const cleaned = stripEventsBlock(markdown);
+  const chunks = cleaned.split(/\n(?=##\s)/);
+  let intro = '';
+  const semesters: CalendarSemesterSection[] = [];
+  let footnotes = '';
+
+  for (const chunk of chunks) {
+    const part = chunk.trim();
+    if (!part) continue;
+
+    if (/^##\s*Footnotes\b/i.test(part)) {
+      footnotes = part.replace(/^##\s*Footnotes\s*\n?/i, '').trim();
+      continue;
+    }
+
+    const semMatch = part.match(/^##\s*((?:Spring|Summer|Fall)[^\n]*)/i);
+    if (semMatch && SEMESTER_HEADING_RE.test(part)) {
+      const key = (semMatch[1].match(/(Spring|Summer|Fall)/i)?.[1].toLowerCase() || 'spring') as SemesterKey;
+      semesters.push({
+        key,
+        title: semMatch[1].trim(),
+        markdown: part.replace(/^##[^\n]+\n?/, '').trim(),
+      });
+      continue;
+    }
+
+    if (!intro) intro = part;
+  }
+
+  return { intro, semesters, footnotes };
+}
+
+/** Which tri-semester block is active today (from parsed event date ranges). */
+export function detectActiveSemester(
+  events: AcademicCalendarEvent[],
+  refDate: Date = new Date(),
+): SemesterKey | null {
+  const today = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate()).getTime();
+  const order: SemesterKey[] = ['spring', 'summer', 'fall'];
+
+  for (const sem of order) {
+    const semEvents = events.filter((e) => e.semester === sem);
+    if (!semEvents.length) continue;
+    const starts = semEvents.map((e) => parseLocalCalendarDate(e.start).getTime()).filter((t) => !Number.isNaN(t));
+    const ends = semEvents
+      .map((e) => parseLocalCalendarDate(e.end || e.start).getTime())
+      .filter((t) => !Number.isNaN(t));
+    if (!starts.length || !ends.length) continue;
+    const rangeStart = Math.min(...starts);
+    const rangeEnd = Math.max(...ends);
+    if (today >= rangeStart && today <= rangeEnd) return sem;
+  }
+
+  // Between semesters: open the next one that hasn't ended yet
+  for (const sem of order) {
+    const semEvents = events.filter((e) => e.semester === sem);
+    if (!semEvents.length) continue;
+    const starts = semEvents.map((e) => parseLocalCalendarDate(e.start).getTime());
+    const rangeStart = Math.min(...starts.filter((t) => !Number.isNaN(t)));
+    if (today < rangeStart) return sem;
+  }
+
+  return order.find((sem) => events.some((e) => e.semester === sem)) || null;
+}
+
+export const SEMESTER_ACCENTS: Record<
+  SemesterKey,
+  { border: string; bg: string; badge: string; dot: string }
+> = {
+  spring: {
+    border: 'border-emerald-200 dark:border-emerald-900/50',
+    bg: 'bg-emerald-50/60 dark:bg-emerald-950/20',
+    badge: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300',
+    dot: 'bg-emerald-500',
+  },
+  summer: {
+    border: 'border-amber-200 dark:border-amber-900/50',
+    bg: 'bg-amber-50/60 dark:bg-amber-950/20',
+    badge: 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300',
+    dot: 'bg-amber-500',
+  },
+  fall: {
+    border: 'border-indigo-200 dark:border-indigo-900/50',
+    bg: 'bg-indigo-50/60 dark:bg-indigo-950/20',
+    badge: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300',
+    dot: 'bg-indigo-500',
+  },
+};

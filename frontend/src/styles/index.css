@@ -256,3 +256,17 @@ h5 {
 .academic-calendar-md tbody tr:hover td {
   @apply bg-slate-50/80 dark:bg-slate-800/40;
 }
+
+.academic-calendar-footnotes p,
+.academic-calendar-footnotes li {
+  @apply text-xs leading-relaxed text-slate-500 dark:text-slate-400 mb-1;
+}
+
+.academic-calendar-footnotes ul.footnote-list {
+  @apply list-none pl-0 space-y-1;
+}
+
+.academic-calendar-footnotes ul.footnote-list li::before {
+  content: '*';
+  @apply text-slate-400 mr-1.5;
+}
