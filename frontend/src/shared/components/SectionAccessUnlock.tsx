@@ -11,6 +11,7 @@ interface Props {
   title?: string;
   description?: string;
   submitLabel?: string;
+  embedded?: boolean;
   onUnlocked: (session: StudentSession) => void;
 }
 
@@ -23,6 +24,7 @@ const SectionAccessUnlock: React.FC<Props> = ({
   title = 'Access Locked',
   description,
   submitLabel = 'Unlock',
+  embedded = false,
   onUnlocked,
 }) => {
   const [mode, setMode] = useState<UnlockMode>('returning');
@@ -174,19 +176,42 @@ const SectionAccessUnlock: React.FC<Props> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: embedded ? 8 : 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 p-8 lg:p-12 shadow-2xl max-w-lg mx-auto text-center space-y-6"
+      className={
+        embedded
+          ? 'max-w-lg mx-auto text-center space-y-5 pt-2 pr-10'
+          : 'bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 p-8 lg:p-12 shadow-2xl max-w-lg mx-auto text-center space-y-6'
+      }
     >
-      <div className="w-20 h-20 bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-xl shadow-indigo-600/20">
-        <ShieldAlert size={40} />
+      <div
+        className={`bg-indigo-600 rounded-[2rem] flex items-center justify-center text-white mx-auto shadow-xl shadow-indigo-600/20 ${
+          embedded ? 'w-14 h-14 rounded-2xl' : 'w-20 h-20'
+        }`}
+      >
+        <ShieldAlert size={embedded ? 28 : 40} />
       </div>
       <div className="space-y-2">
-        <h2 className="text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight">{title}</h2>
-        <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed uppercase tracking-wider">{desc}</p>
-        <p className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">
-          Section {section}
-          {subSection ? ` • Sub ${subSection}` : ''} — set by your CR
+        <h2
+          id="section-unlock-form-title"
+          className={`font-black text-slate-900 dark:text-white uppercase tracking-tight ${
+            embedded ? 'text-lg' : 'text-2xl'
+          }`}
+        >
+          {title}
+        </h2>
+        <p
+          className={`font-bold text-slate-500 dark:text-slate-400 leading-relaxed uppercase tracking-wider ${
+            embedded ? 'text-[10px]' : 'text-xs'
+          }`}
+        >
+          {desc}
+        </p>
+        <p className="pt-0.5">
+          <span className="inline-flex items-center rounded-full bg-gradient-to-r from-indigo-600/10 to-violet-600/10 dark:from-indigo-500/15 dark:to-violet-500/15 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500/20">
+            Section {section}
+            {subSection ? ` · Sub ${subSection}` : ''}
+          </span>
         </p>
       </div>
 

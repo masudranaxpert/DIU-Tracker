@@ -7,6 +7,14 @@ interface Props {
   section: string;
 }
 
+function SectionBadge({ section }: { section: string }) {
+  return (
+    <span className="inline-flex items-center rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white shadow-sm shadow-indigo-600/25 ring-1 ring-indigo-400/30 dark:ring-indigo-500/40">
+      Section {section}
+    </span>
+  );
+}
+
 const DashboardHero: React.FC<Props> = ({ section }) => {
   const [now, setNow] = React.useState(new Date());
 
@@ -20,7 +28,6 @@ const DashboardHero: React.FC<Props> = ({ section }) => {
 
   return (
     <section className="relative overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 tour-stats">
-      {/* soft accent */}
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-indigo-50/80 via-transparent to-transparent dark:from-indigo-950/30" />
       <div className="pointer-events-none absolute -top-12 -right-8 w-48 h-48 rounded-full bg-indigo-100/50 dark:bg-indigo-900/20 blur-3xl" />
 
@@ -30,10 +37,13 @@ const DashboardHero: React.FC<Props> = ({ section }) => {
             <TimeIcon size={26} />
           </div>
           <div className="min-w-0">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-indigo-600 dark:text-indigo-400">
-              {getGreeting(now)} • Section {section}
-            </p>
-            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-tight mt-0.5 truncate">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
+                {getGreeting(now)}
+              </p>
+              <SectionBadge section={section} />
+            </div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white leading-tight mt-1 truncate">
               {format(now, 'EEEE')}
             </h1>
             <p className="text-sm font-medium text-slate-400 mt-1">
@@ -42,7 +52,6 @@ const DashboardHero: React.FC<Props> = ({ section }) => {
           </div>
         </div>
 
-        {/* live clock */}
         <div className="hidden sm:flex flex-col items-end text-right shrink-0">
           <p className="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white tabular-nums leading-none">
             {format(now, 'h:mm')}
