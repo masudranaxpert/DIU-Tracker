@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
+import base64
+import json
 import logging
 import os
 import time
-from pathlib import Path
 from typing import Any
 
 _logger = logging.getLogger(__name__)
 _firebase_ready = False
+_cached_cred_info: dict[str, Any] | None = None
 
 FCM_ENABLED_DEFAULT = True
-FCM_CREDENTIALS_PATH_DEFAULT = "secrets/firebase.json"
 # FCM HTTP v1: max 500 registration tokens per multicast
 FCM_MULTICAST_LIMIT = 500
 # Keep payload under 4KB (notification + data)
@@ -27,33 +28,58 @@ def is_fcm_enabled() -> bool:
     return raw.lower() in ("1", "true", "yes")
 
 
-def credentials_path() -> Path | None:
-    raw = os.environ.get("FCM_CREDENTIALS_PATH", FCM_CREDENTIALS_PATH_DEFAULT)
-    path = Path(raw)
-    if not path.is_absolute():
-        path = Path(__file__).resolve().parent.parent / path
-    return path if path.is_file() else None
+def _normalize_private_key(info: dict[str, Any]) -> dict[str, Any]:
+    key = info.get("private_key")
+    if isinstance(key, str) and "\\n" in key:
+        info = {**info, "private_key": key.replace("\\n", "\n")}
+    return info
 
 
-def _verify_service_account(cred_file: Path) -> bool:
-    """Validate JSON and JWT before sending push (catches corrupt/revoked keys early)."""
+def _load_service_account_info() -> dict[str, Any] | None:
+    global _cached_cred_info
+    if _cached_cred_info is not None:
+        return _cached_cred_info
+
+    raw_b64 = (os.environ.get("FCM_TOKEN_BASE64") or "").strip()
+    if not raw_b64:
+        _logger.warning("FCM disabled: set FCM_TOKEN_BASE64 in .env (base64 of Firebase service account JSON)")
+        return None
+
+    try:
+        padded = raw_b64 + "=" * (-len(raw_b64) % 4)
+        decoded = base64.b64decode(padded, validate=False)
+        info = json.loads(decoded.decode("utf-8"))
+        if not isinstance(info, dict):
+            raise ValueError("decoded payload is not a JSON object")
+        required = ("type", "project_id", "private_key", "client_email")
+        missing = [k for k in required if not info.get(k)]
+        if missing:
+            raise ValueError(f"missing fields: {', '.join(missing)}")
+        info = _normalize_private_key(info)
+        _cached_cred_info = info
+        return info
+    except Exception as exc:
+        _logger.error(
+            "FCM_TOKEN_BASE64 invalid — encode the full Firebase service account JSON file: %s",
+            exc,
+        )
+        return None
+
+
+def _verify_service_account(info: dict[str, Any]) -> bool:
     try:
         from google.auth.transport.requests import Request
         from google.oauth2 import service_account
 
         scopes = ["https://www.googleapis.com/auth/firebase.messaging"]
-        creds = service_account.Credentials.from_service_account_file(
-            str(cred_file),
-            scopes=scopes,
-        )
+        creds = service_account.Credentials.from_service_account_info(info, scopes=scopes)
         creds.refresh(Request())
         _logger.info("FCM credentials OK for %s", creds.service_account_email)
         return True
     except Exception as exc:
         _logger.error(
-            "FCM credentials invalid at %s — regenerate key in Firebase Console "
-            "and ensure the full JSON file is mounted (Invalid JWT = corrupt or revoked key): %s",
-            cred_file,
+            "FCM credentials rejected by Google — generate a NEW key in Firebase Console "
+            "and update FCM_TOKEN_BASE64 (Invalid JWT = corrupt or revoked key): %s",
             exc,
         )
         return False
@@ -65,21 +91,19 @@ def ensure_firebase() -> bool:
         return True
     if not is_fcm_enabled():
         return False
-    cred_file = credentials_path()
-    if not cred_file:
-        _logger.warning(
-            "FCM disabled: place service account JSON at backend/%s",
-            os.environ.get("FCM_CREDENTIALS_PATH", FCM_CREDENTIALS_PATH_DEFAULT),
-        )
+
+    info = _load_service_account_info()
+    if not info:
         return False
-    if not _verify_service_account(cred_file):
+    if not _verify_service_account(info):
         return False
+
     try:
         import firebase_admin
         from firebase_admin import credentials
 
         if not firebase_admin._apps:
-            firebase_admin.initialize_app(credentials.Certificate(str(cred_file)))
+            firebase_admin.initialize_app(credentials.Certificate(info))
         _firebase_ready = True
         return True
     except Exception as exc:
