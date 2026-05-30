@@ -250,31 +250,31 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
                       </div>
                     )}
 
-                    <div className="p-4 pl-4 flex gap-3.5">
+                    <div className="p-3 sm:p-4 pl-3.5 sm:pl-4 flex gap-3">
                       <div
-                        className={`w-10 h-10 rounded-lg flex-shrink-0 flex items-center justify-center border ${PRIORITY_COLORS[priority]}`}
+                        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex-shrink-0 flex items-center justify-center border ${PRIORITY_COLORS[priority]}`}
                       >
                         {PRIORITY_ICONS[priority]}
                       </div>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-3">
-                          <h3 className="text-[15px] font-semibold text-slate-900 dark:text-white leading-snug line-clamp-2">
+                        <div className="flex items-center justify-between gap-2">
+                          <h3 className="text-sm font-semibold text-slate-900 dark:text-white leading-snug line-clamp-1 min-w-0">
                             {notice.title}
                           </h3>
                           <ArrowRight
-                            size={16}
-                            className="text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-0.5 shrink-0 mt-0.5 transition-all duration-200"
+                            size={15}
+                            className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 shrink-0 transition-all duration-200"
                           />
                         </div>
 
                         {preview && (
-                          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-1.5 line-clamp-2">
+                          <p className="text-[13px] font-normal text-slate-600 dark:text-slate-300 leading-snug mt-1 line-clamp-1">
                             {preview}
                           </p>
                         )}
 
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2.5 text-xs text-slate-400">
+                        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-2 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                           <span className="inline-flex items-center gap-1">
                             <Calendar size={12} />
                             {format(parseISO(notice.created_at), 'MMM d, yyyy')}
@@ -288,8 +288,8 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
                             </span>
                           )}
                           {notice.uploader && (
-                            <span className="inline-flex items-center gap-1.5 ml-auto">
-                              <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700">
+                            <span className="inline-flex items-center gap-1 ml-auto min-w-0">
+                              <span className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0">
                                 {notice.uploader.avatar_url ? (
                                   <img
                                     src={resolveMediaUrl(notice.uploader.avatar_url)}
@@ -297,12 +297,12 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
                                     className="w-full h-full object-cover"
                                   />
                                 ) : (
-                                  <span className="w-full h-full flex items-center justify-center text-[8px] font-bold text-slate-500">
+                                  <span className="w-full h-full flex items-center justify-center text-[7px] font-bold text-slate-600 dark:text-slate-300">
                                     {notice.uploader.full_name?.charAt(0) || 'A'}
                                   </span>
                                 )}
                               </span>
-                              <span className="truncate max-w-[100px] font-medium">
+                              <span className="truncate max-w-[72px] text-slate-600 dark:text-slate-300">
                                 {notice.uploader.full_name}
                               </span>
                             </span>

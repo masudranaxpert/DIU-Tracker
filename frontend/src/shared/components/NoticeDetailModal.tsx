@@ -8,7 +8,6 @@ import {
   BookOpen,
   Calendar,
   Clock,
-  FileText,
   X,
 } from 'lucide-react';
 import { Notice, Course } from '@/shared/types/types';
@@ -18,31 +17,31 @@ type Priority = 'low' | 'normal' | 'high' | 'urgent';
 
 const PRIORITY_META: Record<
   Priority,
-  { hero: string; chip: string; label: string; icon: React.ReactNode }
+  { hero: string; badge: string; label: string; icon: React.ReactNode }
 > = {
   low: {
-    hero: 'bg-gradient-to-br from-slate-600 to-slate-800',
-    chip: 'bg-white/20 text-white ring-white/30',
-    label: 'Low priority',
-    icon: <Info size={16} />,
+    hero: 'bg-slate-800',
+    badge: 'bg-slate-700/80 text-slate-100',
+    label: 'Low',
+    icon: <Info size={18} strokeWidth={2.25} />,
   },
   normal: {
-    hero: 'bg-gradient-to-br from-indigo-600 to-indigo-800',
-    chip: 'bg-white/20 text-white ring-white/30',
+    hero: 'bg-indigo-700',
+    badge: 'bg-indigo-600/90 text-white',
     label: 'Notice',
-    icon: <Bell size={16} />,
+    icon: <Bell size={18} strokeWidth={2.25} />,
   },
   high: {
-    hero: 'bg-gradient-to-br from-amber-500 to-orange-600',
-    chip: 'bg-white/20 text-white ring-white/30',
+    hero: 'bg-amber-600',
+    badge: 'bg-amber-700/90 text-white',
     label: 'Important',
-    icon: <AlertTriangle size={16} />,
+    icon: <AlertTriangle size={18} strokeWidth={2.25} />,
   },
   urgent: {
-    hero: 'bg-gradient-to-br from-rose-600 to-red-700',
-    chip: 'bg-white/20 text-white ring-white/30',
+    hero: 'bg-rose-700',
+    badge: 'bg-rose-800/90 text-white',
     label: 'Urgent',
-    icon: <Zap size={16} className="fill-current" />,
+    icon: <Zap size={18} strokeWidth={2.25} className="fill-current" />,
   },
 };
 
@@ -79,110 +78,112 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/45 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/55 backdrop-blur-[2px]"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="notice-modal-title"
     >
       <div
-        className="bg-white dark:bg-slate-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[92vh] flex flex-col animate-in fade-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200"
+        className="bg-white dark:bg-slate-900 w-full sm:max-w-md sm:rounded-2xl rounded-t-[1.25rem] shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col max-h-[min(88dvh,100dvh)] sm:max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Hero */}
-        <div className={`relative px-5 pt-5 pb-6 text-white ${meta.hero}`}>
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-2.5 pb-0 bg-white dark:bg-slate-900">
+          <span className="w-10 h-1 rounded-full bg-slate-200 dark:bg-slate-700" aria-hidden />
+        </div>
+
+        {/* Header — compact on mobile */}
+        <div className={`relative px-4 sm:px-5 pt-3 sm:pt-4 pb-4 text-white ${meta.hero}`}>
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 transition-colors duration-200 cursor-pointer"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 w-9 h-9 flex items-center justify-center rounded-full bg-black/15 hover:bg-black/25 active:bg-black/30 transition-colors duration-200 cursor-pointer"
             aria-label="Close"
           >
             <X size={18} />
           </button>
 
-          <div className="flex items-start gap-4 pr-10">
-            <div className="w-12 h-12 rounded-xl bg-white/15 backdrop-blur-sm border border-white/20 flex items-center justify-center shrink-0">
+          <div className="flex items-start gap-3 pr-11">
+            <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
               {meta.icon}
             </div>
             <div className="flex-1 min-w-0">
               <span
-                className={`inline-flex text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md ring-1 ${meta.chip}`}
+                className={`inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${meta.badge}`}
               >
                 {meta.label}
               </span>
               <h2
                 id="notice-modal-title"
-                className="text-lg sm:text-xl font-semibold leading-snug mt-2.5 line-clamp-4"
+                className="text-base sm:text-lg font-bold leading-snug mt-2 text-white"
               >
                 {notice.title}
               </h2>
-              {isExpired && (
-                <span className="inline-flex mt-2.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-md bg-white/20 text-white/90 ring-1 ring-white/25">
-                  Expired
-                </span>
-              )}
             </div>
           </div>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-5 py-4 space-y-4">
-          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-slate-600 dark:text-slate-400">
-            <span className="inline-flex items-center gap-2 font-medium">
-              <Calendar size={15} className="text-indigo-500 shrink-0" />
-              Posted {format(created, 'EEEE, MMM d, yyyy')}
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto overscroll-contain custom-scrollbar px-4 sm:px-5 py-4 space-y-4 min-h-0">
+          {/* Meta row */}
+          <div className="flex flex-wrap gap-2">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2.5 py-1.5 rounded-lg">
+              <Calendar size={13} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
+              {format(created, 'MMM d, yyyy')}
             </span>
             {notice.expires_at && (
               <span
-                className={`inline-flex items-center gap-2 font-medium ${isExpired ? 'text-rose-600 dark:text-rose-400' : 'text-amber-600 dark:text-amber-400'}`}
+                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg ${
+                  isExpired
+                    ? 'text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/40'
+                    : 'text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40'
+                }`}
               >
-                <Clock size={15} className="shrink-0" />
+                <Clock size={13} className="shrink-0" />
                 {isExpired
-                  ? `Expired ${format(parseISO(notice.expires_at), 'MMM d, yyyy')}`
-                  : `Expires ${format(parseISO(notice.expires_at), 'MMM d, yyyy')}`}
+                  ? `Expired ${format(parseISO(notice.expires_at), 'MMM d')}`
+                  : `Until ${format(parseISO(notice.expires_at), 'MMM d')}`}
+              </span>
+            )}
+            {isExpired && (
+              <span className="inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-md bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">
+                Expired
               </span>
             )}
           </div>
 
           {course && (
-            <div className="flex items-start gap-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/40 px-3.5 py-3">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                <BookOpen size={16} />
-              </div>
+            <div className="flex items-center gap-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 px-3 py-2.5">
+              <BookOpen size={15} className="text-indigo-600 dark:text-indigo-400 shrink-0" />
               <div className="min-w-0">
-                <p className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+                <span className="text-xs font-bold text-indigo-700 dark:text-indigo-300 font-mono">
                   {course.code}
-                </p>
-                <p className="text-sm text-slate-700 dark:text-slate-300 mt-0.5 leading-snug">
+                </span>
+                <span className="text-xs text-slate-600 dark:text-slate-400 mx-1.5">·</span>
+                <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
                   {course.name}
-                </p>
+                </span>
               </div>
             </div>
           )}
 
-          <div className="rounded-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-            <div className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800">
-              <FileText size={14} className="text-slate-400 shrink-0" />
-              <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">
-                Details
-              </span>
-            </div>
-            <div className="px-3.5 py-3.5">
-              {content ? (
-                <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words">
-                  {content}
-                </p>
-              ) : (
-                <p className="text-sm text-slate-400 dark:text-slate-500 italic">
-                  No additional details — title only announcement.
-                </p>
-              )}
-            </div>
+          {/* Description — readable weight & size, not oversized */}
+          <div className="rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 px-4 py-3.5">
+            {content ? (
+              <p className="text-[15px] font-medium text-slate-800 dark:text-slate-100 leading-[1.65] whitespace-pre-wrap break-words">
+                {content}
+              </p>
+            ) : (
+              <p className="text-[15px] font-medium text-slate-500 dark:text-slate-400 italic">
+                No additional details.
+              </p>
+            )}
           </div>
 
           {notice.uploader && (
-            <div className="flex items-center gap-3 rounded-xl border border-slate-100 dark:border-slate-800 px-3.5 py-3">
-              <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden shrink-0 ring-2 ring-white dark:ring-slate-900">
+            <div className="flex items-center gap-2.5 pt-1">
+              <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0">
                 {notice.uploader.avatar_url ? (
                   <img
                     src={resolveMediaUrl(notice.uploader.avatar_url)}
@@ -190,13 +191,13 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 text-xs font-bold">
+                  <div className="w-full h-full flex items-center justify-center bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 text-xs font-bold">
                     {notice.uploader.full_name?.charAt(0) || 'A'}
                   </div>
                 )}
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   Posted by
                 </p>
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">
@@ -207,11 +208,12 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
           )}
         </div>
 
-        <div className="px-5 py-4 border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+        {/* Footer — safe area for home indicator; sits above mobile nav when modal is full overlay */}
+        <div className="shrink-0 px-4 sm:px-5 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] sm:pb-4 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <button
             type="button"
             onClick={onClose}
-            className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm transition-colors duration-200 cursor-pointer"
+            className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-semibold rounded-xl text-sm transition-colors duration-200 cursor-pointer active:opacity-90"
           >
             Close
           </button>
