@@ -12,7 +12,7 @@ _logger = logging.getLogger(__name__)
 _firebase_ready = False
 
 FCM_ENABLED_DEFAULT = True
-FCM_CREDENTIALS_PATH_DEFAULT = "secrets/firebase-service-account.json"
+FCM_CREDENTIALS_PATH_DEFAULT = "secrets/firebase.json"
 # FCM HTTP v1: max 500 registration tokens per multicast
 FCM_MULTICAST_LIMIT = 500
 # Keep payload under 4KB (notification + data)
@@ -35,6 +35,30 @@ def credentials_path() -> Path | None:
     return path if path.is_file() else None
 
 
+def _verify_service_account(cred_file: Path) -> bool:
+    """Validate JSON and JWT before sending push (catches corrupt/revoked keys early)."""
+    try:
+        from google.auth.transport.requests import Request
+        from google.oauth2 import service_account
+
+        scopes = ["https://www.googleapis.com/auth/firebase.messaging"]
+        creds = service_account.Credentials.from_service_account_file(
+            str(cred_file),
+            scopes=scopes,
+        )
+        creds.refresh(Request())
+        _logger.info("FCM credentials OK for %s", creds.service_account_email)
+        return True
+    except Exception as exc:
+        _logger.error(
+            "FCM credentials invalid at %s — regenerate key in Firebase Console "
+            "and ensure the full JSON file is mounted (Invalid JWT = corrupt or revoked key): %s",
+            cred_file,
+            exc,
+        )
+        return False
+
+
 def ensure_firebase() -> bool:
     global _firebase_ready
     if _firebase_ready:
@@ -44,9 +68,11 @@ def ensure_firebase() -> bool:
     cred_file = credentials_path()
     if not cred_file:
         _logger.warning(
-            "FCM disabled: place service account JSON at backend/%s (not in git)",
+            "FCM disabled: place service account JSON at backend/%s",
             os.environ.get("FCM_CREDENTIALS_PATH", FCM_CREDENTIALS_PATH_DEFAULT),
         )
+        return False
+    if not _verify_service_account(cred_file):
         return False
     try:
         import firebase_admin

@@ -1,37 +1,58 @@
+from datetime import datetime
 from typing import List, Optional
 
 from sqlalchemy import or_
+from sqlalchemy.dialects.mysql import insert as mysql_insert
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
 import models
 import schemas
+from models import generate_uuid
+
+_MAX_UPSERT_RETRIES = 3
 
 
 def upsert_push_token(db: Session, payload: schemas.PushTokenRegister) -> models.DevicePushToken:
-    row = (
-        db.query(models.DevicePushToken)
-        .filter(models.DevicePushToken.fcm_token == payload.fcm_token)
-        .first()
-    )
-    if row:
-        row.batch_id = payload.batch_id
-        row.section = payload.section
-        row.sub_section = payload.sub_section
-        row.user_id = payload.user_id
-        row.platform = payload.platform or row.platform
-    else:
-        row = models.DevicePushToken(
-            fcm_token=payload.fcm_token,
-            batch_id=payload.batch_id,
-            section=payload.section,
-            sub_section=payload.sub_section,
-            user_id=payload.user_id,
-            platform=payload.platform or "android",
-        )
-        db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
+    """Atomic upsert on fcm_token (avoids MariaDB 1020 concurrent update errors)."""
+    now = datetime.utcnow()
+    platform = payload.platform or "android"
+
+    for attempt in range(_MAX_UPSERT_RETRIES):
+        try:
+            stmt = mysql_insert(models.DevicePushToken).values(
+                id=generate_uuid(),
+                fcm_token=payload.fcm_token,
+                batch_id=payload.batch_id,
+                section=payload.section,
+                sub_section=payload.sub_section,
+                user_id=payload.user_id,
+                platform=platform,
+                created_at=now,
+                updated_at=now,
+            )
+            stmt = stmt.on_duplicate_key_update(
+                batch_id=stmt.inserted.batch_id,
+                section=stmt.inserted.section,
+                sub_section=stmt.inserted.sub_section,
+                user_id=stmt.inserted.user_id,
+                platform=stmt.inserted.platform,
+                updated_at=now,
+            )
+            db.execute(stmt)
+            db.commit()
+            row = (
+                db.query(models.DevicePushToken)
+                .filter(models.DevicePushToken.fcm_token == payload.fcm_token)
+                .one()
+            )
+            return row
+        except OperationalError:
+            db.rollback()
+            if attempt >= _MAX_UPSERT_RETRIES - 1:
+                raise
+
+    raise RuntimeError("push token upsert failed")
 
 
 def delete_push_tokens_bulk(db: Session, fcm_tokens: list[str]) -> int:
