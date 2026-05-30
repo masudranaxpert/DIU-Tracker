@@ -176,10 +176,10 @@ const SectionAccessUnlock: React.FC<Props> = ({
 
   const tabBtnClass = (active: boolean) =>
     embedded
-      ? `flex flex-1 items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-semibold transition-colors duration-200 cursor-pointer ${
+      ? `flex flex-1 items-center justify-center gap-1.5 rounded-md py-2 text-[13px] font-medium transition-all duration-200 cursor-pointer ${
           active
-            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
-            : 'text-slate-600 hover:bg-slate-200/70 dark:text-slate-300 dark:hover:bg-slate-700/60'
+            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-slate-200/80 dark:bg-slate-900 dark:text-white dark:ring-slate-700/80'
+            : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
         }`
       : `flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
           active
@@ -187,61 +187,92 @@ const SectionAccessUnlock: React.FC<Props> = ({
             : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
         }`;
 
+  const embeddedInputClass =
+    'h-11 w-full rounded-lg border border-slate-200 bg-white py-2.5 pl-10 pr-3 text-sm text-slate-900 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-indigo-500 focus:ring-[3px] focus:ring-indigo-500/15 dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:focus:border-indigo-400';
+
+  const embeddedPinClass = (hasError: boolean) =>
+    `h-12 w-11 rounded-lg border bg-white text-center text-xl font-semibold tabular-nums shadow-sm outline-none transition-all duration-200 disabled:opacity-50 dark:bg-slate-900 sm:h-[3.25rem] sm:w-12 ${
+      hasError
+        ? 'border-rose-400 focus:border-rose-500 focus:ring-[3px] focus:ring-rose-500/15'
+        : 'border-slate-200 focus:border-indigo-500 focus:ring-[3px] focus:ring-indigo-500/15 dark:border-slate-700 dark:focus:border-indigo-400'
+    }`;
+
+  const bannerClass = (tone: 'emerald' | 'slate' | 'sky') => {
+    const map = {
+      emerald:
+        'border-emerald-200/80 bg-emerald-50/90 text-emerald-800 dark:border-emerald-900/60 dark:bg-emerald-950/35 dark:text-emerald-300',
+      slate:
+        'border-slate-200/80 bg-slate-50/90 text-slate-700 dark:border-slate-700/80 dark:bg-slate-900/60 dark:text-slate-300',
+      sky: 'border-sky-200/80 bg-sky-50/90 text-sky-800 dark:border-sky-900/60 dark:bg-sky-950/35 dark:text-sky-300',
+    };
+    return `rounded-lg border px-3.5 py-2.5 text-[13px] leading-snug ${map[tone]}`;
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: embedded ? 8 : 20 }}
+      initial={{ opacity: 0, y: embedded ? 6 : 20 }}
       animate={{ opacity: 1, y: 0 }}
       className={
         embedded
-          ? 'mx-auto max-w-lg space-y-5 pr-10 text-center'
+          ? 'w-full max-w-[340px] space-y-5 text-center'
           : 'bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 p-8 lg:p-12 shadow-2xl max-w-lg mx-auto text-center space-y-6'
       }
     >
-      <div
-        className={`flex items-center justify-center bg-indigo-600 text-white mx-auto shadow-lg shadow-indigo-600/20 ${
-          embedded ? 'h-12 w-12 rounded-2xl' : 'w-20 h-20 rounded-[2rem]'
-        }`}
-      >
-        <ShieldAlert size={embedded ? 24 : 40} strokeWidth={embedded ? 2.25 : 2} />
-      </div>
-      <div className="space-y-2.5">
-        <h2
-          id="section-unlock-form-title"
-          className={
-            embedded
-              ? 'text-xl font-bold normal-case tracking-tight text-slate-900 dark:text-white'
-              : 'text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight'
-          }
-        >
-          {title}
-        </h2>
-        <p
-          className={
-            embedded
-              ? 'text-sm font-normal normal-case leading-relaxed text-slate-600 dark:text-slate-300'
-              : 'text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed uppercase tracking-wider'
-          }
-        >
-          {desc}
-        </p>
-        <p className="pt-0.5">
-          <span
+      <div className="space-y-4">
+        <div className="relative mx-auto w-fit">
+          {embedded && (
+            <div className="pointer-events-none absolute -inset-3 rounded-3xl bg-indigo-500/15 blur-xl dark:bg-indigo-500/10" />
+          )}
+          <div
+            className={`relative flex items-center justify-center text-white ${
+              embedded
+                ? 'h-14 w-14 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-600/25 ring-1 ring-white/20'
+                : 'mx-auto w-20 h-20 rounded-[2rem] bg-indigo-600 shadow-xl shadow-indigo-600/20'
+            }`}
+          >
+            <ShieldAlert size={embedded ? 26 : 40} strokeWidth={embedded ? 2 : 2} />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <h2
+            id="section-unlock-form-title"
             className={
               embedded
-                ? 'inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 ring-1 ring-indigo-200/80 dark:bg-indigo-950/50 dark:text-indigo-300 dark:ring-indigo-800/60'
-                : 'inline-flex items-center rounded-full bg-gradient-to-r from-indigo-600/10 to-violet-600/10 dark:from-indigo-500/15 dark:to-violet-500/15 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500/20'
+                ? 'text-[1.375rem] font-semibold normal-case leading-tight tracking-tight text-slate-900 dark:text-white'
+                : 'text-2xl font-black text-slate-900 dark:text-white uppercase tracking-tight'
             }
           >
-            Section {section}
-            {subSection ? ` · Sub ${subSection}` : ''}
-          </span>
-        </p>
+            {title}
+          </h2>
+          <p
+            className={
+              embedded
+                ? 'mx-auto max-w-[30ch] text-[13px] font-normal normal-case leading-relaxed text-slate-600 dark:text-slate-400'
+                : 'text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed uppercase tracking-wider'
+            }
+          >
+            {desc}
+          </p>
+          <div className="pt-1">
+            <span
+              className={
+                embedded
+                  ? 'inline-flex items-center rounded-full bg-indigo-600/10 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-700 ring-1 ring-inset ring-indigo-600/15 dark:bg-indigo-500/10 dark:text-indigo-300 dark:ring-indigo-500/25'
+                  : 'inline-flex items-center rounded-full bg-gradient-to-r from-indigo-600/10 to-violet-600/10 dark:from-indigo-500/15 dark:to-violet-500/15 px-2.5 py-0.5 text-[9px] font-black uppercase tracking-widest text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500/20'
+              }
+            >
+              Section {section}
+              {subSection ? ` · Sub ${subSection}` : ''}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div
         className={
           embedded
-            ? 'flex gap-1.5 rounded-xl bg-slate-100 p-1 dark:bg-slate-800/80'
+            ? 'flex w-full gap-1 rounded-lg bg-slate-100/90 p-1 ring-1 ring-slate-200/60 dark:bg-slate-900/80 dark:ring-slate-800/80'
             : 'flex gap-2 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl'
         }
       >
@@ -270,112 +301,113 @@ const SectionAccessUnlock: React.FC<Props> = ({
       </div>
 
       {quickUnlock && (
-        <p
-          className={
-            embedded
-              ? 'rounded-xl bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-              : 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/30 py-2 px-4 rounded-xl'
-          }
-        >
+        <p className={embedded ? bannerClass('emerald') : 'text-[10px] font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/30 py-2 px-4 rounded-xl'}>
           Welcome back, {knownStudent!.name}! Your student ID and PIN are enough.
         </p>
       )}
 
       {mode === 'returning' && studentId.trim().length >= 3 && !isLookingUp && !knownStudent && (
-        <p
-          className={
-            embedded
-              ? 'rounded-xl bg-slate-50 px-4 py-2.5 text-sm text-slate-600 dark:bg-slate-800/60 dark:text-slate-300'
-              : 'text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50 py-2 px-4 rounded-xl'
-          }
-        >
+        <p className={embedded ? bannerClass('slate') : 'text-[10px] font-bold text-slate-500 uppercase tracking-wider bg-slate-50 dark:bg-slate-800/50 py-2 px-4 rounded-xl'}>
           Enter your ID and PIN. If you are new, switch to the New student tab.
         </p>
       )}
 
       {mode === 'new' && knownStudent && (
-        <p
-          className={
-            embedded
-              ? 'rounded-xl bg-sky-50 px-4 py-2.5 text-sm text-sky-700 dark:bg-sky-950/40 dark:text-sky-300'
-              : 'text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 dark:bg-sky-950/30 py-2 px-4 rounded-xl'
-          }
-        >
+        <p className={embedded ? bannerClass('sky') : 'text-[10px] font-bold text-sky-600 uppercase tracking-wider bg-sky-50 dark:bg-sky-950/30 py-2 px-4 rounded-xl'}>
           This ID already exists — you can update your name and phone below.
         </p>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-3.5 text-left">
-        <div className="relative">
-          <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input
-            type="text"
-            placeholder="Student ID (e.g. 252-15-346)"
-            value={studentId}
-            onChange={(e) => {
-              setStudentId(e.target.value);
-              setFormError('');
-            }}
-            className={`w-full rounded-2xl border-2 border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-colors duration-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white ${
-              embedded ? '' : 'bg-slate-50 font-bold border-slate-100'
-            }`}
-            required
-          />
-          {isLookingUp && (
-            <span
-              className={`absolute right-4 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-400 ${
-                embedded ? 'text-xs font-medium' : 'text-[9px] font-black text-indigo-500 uppercase'
-              }`}
-            >
-              Checking…
-            </span>
+      <form onSubmit={handleSubmit} className={`space-y-4 ${embedded ? 'w-full' : 'text-left'}`}>
+        <div className="space-y-1.5 text-left">
+          {embedded && (
+            <label htmlFor="unlock-student-id" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+              Student ID
+            </label>
           )}
+          <div className="relative">
+            <Hash className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+            <input
+              id="unlock-student-id"
+              type="text"
+              placeholder="e.g. 252-15-346"
+              value={studentId}
+              onChange={(e) => {
+                setStudentId(e.target.value);
+                setFormError('');
+              }}
+              className={embedded ? embeddedInputClass : 'w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-bold text-sm focus:border-indigo-500'}
+              required
+            />
+            {isLookingUp && (
+              <span
+                className={`absolute right-3.5 top-1/2 -translate-y-1/2 text-indigo-600 dark:text-indigo-400 ${
+                  embedded ? 'text-xs font-medium' : 'text-[9px] font-black text-indigo-500 uppercase'
+                }`}
+              >
+                Checking…
+              </span>
+            )}
+          </div>
         </div>
 
         {mode === 'new' && (
           <>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input
-                type="text"
-                placeholder="Full name"
-                value={name}
-                onChange={(e) => {
-                  setName(e.target.value);
-                  setFormError('');
-                }}
-                className={`w-full rounded-2xl border-2 border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-colors duration-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white ${
-                  embedded ? '' : 'bg-slate-50 font-bold border-slate-100'
-                }`}
-                required
-              />
+            <div className="space-y-1.5 text-left">
+              {embedded && (
+                <label htmlFor="unlock-full-name" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Full name
+                </label>
+              )}
+              <div className="relative">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                <input
+                  id="unlock-full-name"
+                  type="text"
+                  placeholder="Your full name"
+                  value={name}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    setFormError('');
+                  }}
+                  className={embedded ? embeddedInputClass : 'w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-bold text-sm focus:border-indigo-500'}
+                  required
+                />
+              </div>
             </div>
-            <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-              <input
-                type="tel"
-                placeholder="Phone number (optional)"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className={`w-full rounded-2xl border-2 border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm font-medium text-slate-900 outline-none transition-colors duration-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 dark:border-slate-700 dark:bg-slate-800 dark:text-white ${
-                  embedded ? '' : 'bg-slate-50 font-bold border-slate-100'
-                }`}
-              />
+            <div className="space-y-1.5 text-left">
+              {embedded && (
+                <label htmlFor="unlock-phone" className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                  Phone <span className="font-normal text-slate-400">(optional)</span>
+                </label>
+              )}
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={15} />
+                <input
+                  id="unlock-phone"
+                  type="tel"
+                  placeholder="01XXXXXXXXX"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className={embedded ? embeddedInputClass : 'w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-2xl outline-none font-bold text-sm focus:border-indigo-500'}
+                />
+              </div>
             </div>
           </>
         )}
 
-        <div className="relative pt-1">
+        <div className="relative space-y-2.5 pt-0.5">
           <label
+            htmlFor="pin-digit-0"
             className={
               embedded
-                ? 'mb-2 block px-1 text-center text-sm font-medium text-slate-700 dark:text-slate-300'
+                ? 'block text-center text-xs font-medium text-slate-700 dark:text-slate-300'
                 : 'text-[9px] font-black text-slate-400 uppercase tracking-widest px-1 mb-2 block text-center'
             }
           >
-            CR access PIN (4 digits)
+            CR access PIN
           </label>
-          <div className="flex justify-center gap-2.5">
+          <div className="flex justify-center gap-2" role="group" aria-label="4 digit CR PIN">
             {[0, 1, 2, 3].map((i) => (
               <input
                 key={i}
@@ -410,22 +442,23 @@ const SectionAccessUnlock: React.FC<Props> = ({
                   setPinError(false);
                   setFormError('');
                 }}
-                className={`h-14 w-12 rounded-xl border-2 bg-white text-center text-2xl font-bold outline-none transition-all duration-200 disabled:opacity-50 dark:bg-slate-800 sm:h-16 sm:w-14 ${
-                  pinError
-                    ? 'border-rose-500 focus:border-rose-500'
-                    : 'border-slate-200 focus:border-indigo-500 dark:border-slate-700'
-                } ${embedded ? '' : 'bg-slate-50 font-black'}`}
+                className={
+                  embedded
+                    ? embeddedPinClass(pinError)
+                    : `w-12 h-14 sm:w-14 sm:h-16 bg-slate-50 dark:bg-slate-800 border-2 rounded-xl outline-none text-center font-black text-2xl transition-all disabled:opacity-50 ${pinError ? 'border-rose-500' : 'border-slate-200 dark:border-slate-700 focus:border-indigo-500'}`
+                }
+                aria-label={`PIN digit ${i + 1}`}
               />
             ))}
           </div>
           <p
             className={
               embedded
-                ? 'mt-2 text-center text-xs text-slate-500 dark:text-slate-400'
+                ? 'text-center text-[11px] text-slate-500 dark:text-slate-400'
                 : 'text-[9px] text-center text-slate-400 font-bold mt-2'
             }
           >
-            {pinInput.length}/4 digits entered
+            {pinInput.length} of 4 digits
           </p>
           {locked && (
             <div className="absolute inset-0 mt-6 flex items-center justify-center rounded-2xl bg-white/80 backdrop-blur-[2px] dark:bg-slate-900/80">
@@ -446,7 +479,7 @@ const SectionAccessUnlock: React.FC<Props> = ({
           <p
             className={
               embedded
-                ? 'rounded-xl bg-rose-50 px-3 py-2 text-center text-sm font-medium leading-snug text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                ? 'rounded-lg border border-rose-200/80 bg-rose-50/90 px-3 py-2 text-center text-[13px] font-medium leading-snug text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/35 dark:text-rose-300'
                 : 'text-[10px] font-black text-rose-500 uppercase tracking-widest text-center'
             }
           >
@@ -457,10 +490,10 @@ const SectionAccessUnlock: React.FC<Props> = ({
         <button
           type="submit"
           disabled={locked || isSubmitting || !canSubmit}
-          className={`w-full rounded-2xl bg-indigo-600 py-3.5 font-semibold text-white shadow-lg shadow-indigo-600/20 transition-colors duration-200 hover:bg-indigo-500 active:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50 ${
+          className={`w-full font-medium text-white transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${
             embedded
-              ? 'text-sm cursor-pointer'
-              : 'py-4 font-black shadow-xl hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-xs disabled:grayscale'
+              ? 'h-11 cursor-pointer rounded-lg bg-indigo-600 text-sm shadow-sm hover:bg-indigo-500 active:bg-indigo-700 focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-indigo-500/25'
+              : 'py-4 rounded-2xl bg-indigo-600 font-black shadow-xl hover:scale-[1.02] active:scale-[0.98] uppercase tracking-widest text-xs disabled:grayscale'
           }`}
         >
           {locked ? 'Temporarily locked' : isSubmitting ? 'Verifying…' : submitLabel}
@@ -470,7 +503,7 @@ const SectionAccessUnlock: React.FC<Props> = ({
       <p
         className={
           embedded
-            ? 'border-t border-slate-100 pt-4 text-xs leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400'
+            ? 'border-t border-slate-200/80 pt-4 text-center text-[11px] leading-relaxed text-slate-500 dark:border-slate-800 dark:text-slate-400'
             : 'text-[9px] font-black text-slate-400 uppercase tracking-widest pt-2 border-t border-slate-100 dark:border-slate-800'
         }
       >
