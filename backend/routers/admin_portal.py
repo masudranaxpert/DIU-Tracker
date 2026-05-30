@@ -258,6 +258,7 @@ def admin_save_academic_calendar(
         markdown=row.markdown,
         display_markdown=strip_events_block(row.markdown),
         events=events,
+        show_on_calendar_view=getattr(row, "show_on_calendar_view", True),
         updated_at=row.updated_at,
         updated_by=row.updated_by,
     )

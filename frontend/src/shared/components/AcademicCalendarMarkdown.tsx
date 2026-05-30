@@ -13,7 +13,7 @@ const AcademicCalendarMarkdown: React.FC<Props> = ({ markdown, className = '', v
 
   return (
     <article
-      className={`academic-calendar-md prose prose-slate dark:prose-invert max-w-none ${variant === 'footnotes' ? 'academic-calendar-footnotes' : ''} ${className}`}
+      className={`academic-calendar-md max-w-none ${variant === 'footnotes' ? 'academic-calendar-footnotes' : 'prose prose-slate dark:prose-invert'} ${className}`}
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

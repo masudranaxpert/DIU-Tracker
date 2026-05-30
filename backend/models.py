@@ -385,5 +385,6 @@ class AcademicCalendar(Base):
     title: Mapped[str] = mapped_column(String, default="Academic Calendar")
     markdown: Mapped[str] = mapped_column(Text, default="")
     events_json: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    show_on_calendar_view: Mapped[bool] = mapped_column(Boolean, default=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by: Mapped[Optional[str]] = mapped_column(String, nullable=True)

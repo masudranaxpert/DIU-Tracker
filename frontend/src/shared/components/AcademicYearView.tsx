@@ -195,10 +195,12 @@ const AcademicYearView: React.FC<Props> = ({ calendar }) => {
             })}
           </div>
 
-          {/* Footnotes — clean note, no raw \* */}
+          {/* Footnotes */}
           {parsed.footnotes && (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 px-4 py-3 lg:px-5 lg:py-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Note</p>
+            <div className="rounded-xl border border-amber-200/80 dark:border-amber-900/50 bg-amber-50/90 dark:bg-amber-950/25 px-4 py-3.5 lg:px-5 lg:py-4 border-l-4 border-l-amber-500 dark:border-l-amber-400">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-900 dark:text-amber-200 mb-2">
+                Note
+              </p>
               <AcademicCalendarMarkdown markdown={parsed.footnotes} variant="footnotes" />
             </div>
           )}

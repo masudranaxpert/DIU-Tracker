@@ -13,6 +13,7 @@ export interface AcademicCalendarData {
   markdown: string;
   display_markdown: string;
   events: AcademicCalendarEvent[];
+  show_on_calendar_view?: boolean;
   updated_at?: string;
   updated_by?: string | null;
 }
@@ -167,6 +168,22 @@ export interface ParsedCalendarSections {
 }
 
 const SEMESTER_HEADING_RE = /^##\s*(Spring|Summer|Fall)\b/i;
+const FOOTNOTE_HEADING_RE = /^##\s*(Footnotes?|Notes?)\b/i;
+
+/** Replace AI meta-commentary with the standard DIU Eid footnote students expect. */
+export function normalizeFootnotes(raw: string): string {
+  const text = raw.trim();
+  if (!text) return '';
+
+  if (
+    /no explanatory note is visible in the provided source/i.test(text) ||
+    /marks .+ with an asterisk/i.test(text)
+  ) {
+    return '* Eid-Ul-Adha and Eid-Ul-Fitr vacation dates are subject to moon sighting and may change accordingly.';
+  }
+
+  return text;
+}
 
 export function parseCalendarSections(markdown: string): ParsedCalendarSections {
   const cleaned = stripEventsBlock(markdown);
@@ -179,8 +196,8 @@ export function parseCalendarSections(markdown: string): ParsedCalendarSections 
     const part = chunk.trim();
     if (!part) continue;
 
-    if (/^##\s*Footnotes\b/i.test(part)) {
-      footnotes = part.replace(/^##\s*Footnotes\s*\n?/i, '').trim();
+    if (FOOTNOTE_HEADING_RE.test(part)) {
+      footnotes = normalizeFootnotes(part.replace(/^##\s*(?:Footnotes?|Notes?)\s*\n?/i, '').trim());
       continue;
     }
 

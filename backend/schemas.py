@@ -638,6 +638,7 @@ class AcademicCalendarResponse(BaseModel):
     markdown: str
     display_markdown: str
     events: List[AcademicCalendarEvent] = []
+    show_on_calendar_view: bool = True
     updated_at: datetime
     updated_by: Optional[str] = None
 
@@ -645,3 +646,4 @@ class AcademicCalendarResponse(BaseModel):
 class AcademicCalendarUpdate(BaseModel):
     title: Optional[str] = None
     markdown: Optional[str] = None
+    show_on_calendar_view: Optional[bool] = None

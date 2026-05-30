@@ -9,6 +9,7 @@ import {
   Divider,
   Snackbar,
   Stack,
+  Switch,
   Tab,
   Tabs,
   TextField,
@@ -21,6 +22,7 @@ import {
   AutoAwesomeOutlined,
   PreviewOutlined,
   EventAvailableOutlined,
+  ViewWeekOutlined,
 } from '@mui/icons-material';
 import {
   ACADEMIC_CALENDAR_AI_PROMPT,
@@ -42,8 +44,10 @@ const cardSx = {
 const AcademicCalendarManagement: React.FC = () => {
   const [title, setTitle] = useState('Academic Calendar');
   const [markdown, setMarkdown] = useState('');
+  const [showOnCalendarView, setShowOnCalendarView] = useState(true);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [togglingVisibility, setTogglingVisibility] = useState(false);
   const [tab, setTab] = useState<'edit' | 'preview'>('edit');
   const [toast, setToast] = useState<string | null>(null);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -57,6 +61,7 @@ const AcademicCalendarManagement: React.FC = () => {
       if (data) {
         setTitle(data.title || 'Academic Calendar');
         setMarkdown(data.markdown || '');
+        setShowOnCalendarView(data.show_on_calendar_view !== false);
         setUpdatedAt(data.updated_at || null);
       }
     } finally {
@@ -86,12 +91,31 @@ const AcademicCalendarManagement: React.FC = () => {
     try {
       const saved = await academicCalendarService.save({ title: title.trim(), markdown });
       setUpdatedAt(saved?.updated_at || null);
+      if (saved?.show_on_calendar_view !== undefined) {
+        setShowOnCalendarView(saved.show_on_calendar_view !== false);
+      }
       setToast(`Saved · ${parsedEvents.length} calendar events detected.`);
       setTab('preview');
     } catch (e: any) {
       setToast(e?.message || 'Save failed');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleCalendarView = async () => {
+    const next = !showOnCalendarView;
+    setShowOnCalendarView(next);
+    setTogglingVisibility(true);
+    try {
+      const saved = await academicCalendarService.updateSettings({ show_on_calendar_view: next });
+      setUpdatedAt(saved?.updated_at || null);
+      setToast(next ? 'Academic events will show on Calendar View.' : 'Hidden from Calendar View — still visible on Academic Calendar page.');
+    } catch (e: any) {
+      setShowOnCalendarView(!next);
+      setToast(e?.message || 'Could not update visibility');
+    } finally {
+      setTogglingVisibility(false);
     }
   };
 
@@ -114,6 +138,57 @@ const AcademicCalendarManagement: React.FC = () => {
           Students see a formatted calendar; dates also appear on the main Calendar View.
         </Typography>
       </Box>
+
+      <Card sx={cardSx}>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          justifyContent="space-between"
+          spacing={2}
+        >
+          <Stack direction="row" spacing={1.5} alignItems="flex-start">
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: showOnCalendarView ? 'rgba(20,184,166,0.12)' : 'rgba(15,23,42,0.06)',
+                color: showOnCalendarView ? 'teal.700' : 'text.secondary',
+                flexShrink: 0,
+              }}
+            >
+              <ViewWeekOutlined fontSize="small" />
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.25 }}>
+                Show on Calendar View
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 520, lineHeight: 1.5 }}>
+                When enabled, parsed academic dates appear as teal events on the main Calendar View.
+                The Academic Calendar page is always available to students.
+              </Typography>
+            </Box>
+          </Stack>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ pl: { xs: 6.5, sm: 0 } }}>
+            <Chip
+              size="small"
+              label={showOnCalendarView ? 'Visible' : 'Hidden'}
+              color={showOnCalendarView ? 'success' : 'default'}
+              variant="outlined"
+              sx={{ fontWeight: 700 }}
+            />
+            <Switch
+              checked={showOnCalendarView}
+              onChange={handleToggleCalendarView}
+              disabled={togglingVisibility}
+              inputProps={{ 'aria-label': 'Show academic calendar on Calendar View' }}
+            />
+          </Stack>
+        </Stack>
+      </Card>
 
       <Card sx={cardSx}>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>

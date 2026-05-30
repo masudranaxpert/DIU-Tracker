@@ -160,6 +160,16 @@ def _run_sqlite_migrations(connection):
                 )
             )
 
+    if "academic_calendar" in tables:
+        ac_cols = {
+            row[1]
+            for row in connection.execute(text("PRAGMA table_info(academic_calendar)")).fetchall()
+        }
+        if "show_on_calendar_view" not in ac_cols:
+            connection.execute(
+                text("ALTER TABLE academic_calendar ADD COLUMN show_on_calendar_view BOOLEAN DEFAULT 1")
+            )
+
     _migrate_course_catalog(connection)
     _migrate_teacher_profiles_global(connection)
     _migrate_teacher_profiles_fields(connection)
@@ -317,6 +327,21 @@ def _migrate_teacher_profiles_fields(connection):
 
 def _run_mysql_migrations(connection):
     """Widen byte-count columns to BIGINT — INT overflows on multi-GB drive quotas."""
+    ac_col = connection.execute(
+        text(
+            "SELECT 1 FROM information_schema.COLUMNS "
+            "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'academic_calendar' "
+            "AND COLUMN_NAME = 'show_on_calendar_view'"
+        )
+    ).fetchone()
+    if not ac_col:
+        connection.execute(
+            text(
+                "ALTER TABLE academic_calendar "
+                "ADD COLUMN show_on_calendar_view TINYINT(1) NOT NULL DEFAULT 1"
+            )
+        )
+
     big_int_columns = {
         "rclone_drive_accounts": ("storage_limit_bytes", "storage_usage_bytes"),
     }

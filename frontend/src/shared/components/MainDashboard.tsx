@@ -899,7 +899,11 @@ const MainDashboard: React.FC<Props> = ({
                                     records={records}
                                     courses={courses}
                                     deadlines={deadlines}
-                                    academicEvents={academicCalendar?.events || []}
+                                    academicEvents={
+                                        academicCalendar?.show_on_calendar_view !== false
+                                            ? academicCalendar?.events || []
+                                            : []
+                                    }
                                     section={selectedSection!}
                                     batchId={selectedBatch!}
                                     selectedDate={selectedDate}

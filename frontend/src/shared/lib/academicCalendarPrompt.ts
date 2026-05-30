@@ -13,6 +13,13 @@ export const ACADEMIC_CALENDAR_AI_PROMPT = `You are helping digitize the officia
 - Preserve exact dates from the source. Use formats like \`03 January 2026\` or ranges \`22 February – 28 February 2026\`.
 - If a cell shows \`--\` or is blank for a semester, write \`—\` in the table.
 - Add footnotes section if the source has asterisk notes (e.g. moon sighting, schedule may change).
+- Footnotes format (required when events have *):
+\`\`\`
+## Footnotes
+
+* Eid-Ul-Adha and Eid-Ul-Fitr vacation dates are subject to moon sighting and may change accordingly.
+\`\`\`
+- Do NOT write meta-commentary about missing notes — use the standard moon-sighting footnote above when Eid events are marked with *.
 - Do NOT invent dates that are not in the source.
 
 ## Event types (for the JSON block)

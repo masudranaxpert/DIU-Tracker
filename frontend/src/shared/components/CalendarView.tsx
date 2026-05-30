@@ -392,9 +392,12 @@ const CalendarView: React.FC<CalendarViewProps> = ({
             </div>
 
             {academicEvents.length > 0 && (
-              <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-800/40">
+              <div
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/30 border border-teal-200/60 dark:border-teal-800/40"
+                title="Academic calendar events"
+                aria-label="Academic calendar events"
+              >
                 <span className={`w-2 h-2 rounded-full ${ACADEMIC_TEAL.dot}`} />
-                <span className={`text-[8px] font-bold uppercase tracking-wider ${ACADEMIC_TEAL.label}`}>University Calendar</span>
               </div>
             )}
           </div>
@@ -534,9 +537,8 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                         <div className="flex-1 space-y-3 lg:space-y-4">
                           {dayAcademic.map(e => (
                             <div key={e.id} className={`flex items-center gap-3 lg:gap-4 p-3 lg:p-4 rounded-xl ${ACADEMIC_TEAL.panelBg} border ${ACADEMIC_TEAL.panelBorder} shadow-sm`}>
-                              <div className={`w-7 h-7 lg:w-8 lg:h-8 rounded-lg bg-gradient-to-br ${ACADEMIC_TEAL.iconGrad} flex items-center justify-center shrink-0 text-white text-[8px] font-black`}>U</div>
+                              <div className={`w-1 lg:w-1.5 h-6 lg:h-8 rounded-full bg-gradient-to-b ${ACADEMIC_TEAL.iconGrad}`} />
                               <div className="flex-1">
-                                <span className={`text-[6px] lg:text-[7px] font-black ${ACADEMIC_TEAL.label} uppercase tracking-widest`}>University Calendar</span>
                                 <h4 className="text-xs lg:text-sm font-bold text-slate-900 dark:text-white leading-snug">{e.title}</h4>
                               </div>
                             </div>
@@ -619,10 +621,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
         <div className="flex-1 overflow-y-auto lg:overflow-y-auto custom-scrollbar p-6 lg:p-8 space-y-10 relative z-10">
           {selectedDayEvents.dayAcademic.length > 0 && (
             <section>
-              <div className={`flex items-center justify-between mb-4 border-b ${ACADEMIC_TEAL.headerBorder} pb-2`}>
-                <h5 className={`text-[8px] font-black ${ACADEMIC_TEAL.header} uppercase tracking-widest`}>## University Calendar</h5>
-                <div className={`w-2 h-2 rounded-full ${ACADEMIC_TEAL.dot} shadow-sm ${ACADEMIC_TEAL.dotShadow}`} />
-              </div>
               <div className="space-y-3">
                 {selectedDayEvents.dayAcademic.map(event => {
                   const start = parseLocalCalendarDate(event.start);

@@ -12,7 +12,13 @@ def get_academic_calendar(db: Session) -> models.AcademicCalendar:
     row = db.query(models.AcademicCalendar).filter(models.AcademicCalendar.id == "default").first()
     if row:
         return row
-    row = models.AcademicCalendar(id="default", title="Academic Calendar", markdown="", events_json="[]")
+    row = models.AcademicCalendar(
+        id="default",
+        title="Academic Calendar",
+        markdown="",
+        events_json="[]",
+        show_on_calendar_view=True,
+    )
     db.add(row)
     db.commit()
     db.refresh(row)
@@ -31,6 +37,8 @@ def save_academic_calendar(
         row.markdown = payload.markdown
         events = parse_calendar_events(payload.markdown)
         row.events_json = json.dumps(events)
+    if payload.show_on_calendar_view is not None:
+        row.show_on_calendar_view = payload.show_on_calendar_view
     row.updated_by = updated_by
     row.updated_at = datetime.utcnow()
     db.commit()
