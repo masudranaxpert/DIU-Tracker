@@ -1,6 +1,7 @@
 import { apiClient } from './apiClient';
 import { CourseGroup, UserProfile } from '@/shared/types/types';
 import { normalizeCourseGroups } from '@/shared/lib/groupUtils';
+import { clearSectionOfflineData } from '@/shared/lib/clearSectionOfflineData';
 
 export type CrProfileForLock = {
   is_cr?: boolean;
@@ -279,6 +280,11 @@ export const studentService = {
       }
       if (session.batch_id && session.section) {
         clearPinStorage(session.batch_id, session.section);
+        void clearSectionOfflineData(
+          session.batch_id,
+          session.section,
+          session.sub_section ?? undefined,
+        );
       }
     }
     writeSession(null);

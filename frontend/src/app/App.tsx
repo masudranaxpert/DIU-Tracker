@@ -69,6 +69,7 @@ const App: React.FC = () => {
       return [];
     }
   });
+  const [sectionPinLocked, setSectionPinLocked] = useState(true);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -133,6 +134,30 @@ const App: React.FC = () => {
       handler.then(h => h.remove());
     };
   }, [selectedBatch, selectedSection, selectedSubSection, refreshSectionData]);
+
+  // PIN lock: hide cached notices/records/deadlines after student logout
+  useEffect(() => {
+    if (!selectedBatch || !selectedSection) return;
+
+    let cancelled = false;
+    const syncLock = async () => {
+      const locked = await studentService.isSectionLocked(
+        selectedBatch,
+        selectedSection,
+        profile,
+      );
+      if (cancelled) return;
+      setSectionPinLocked(locked);
+      if (!locked) {
+        void refreshSectionData();
+      }
+    };
+
+    void syncLock();
+    return studentService.subscribeSession(() => {
+      void syncLock();
+    });
+  }, [selectedBatch, selectedSection, profile?.id, profile?.batch_id, profile?.section, profile?.is_cr, refreshSectionData]);
 
   // Handle Android Hardware Back Button
   const lastBackPress = React.useRef<number>(0);
@@ -314,9 +339,11 @@ const App: React.FC = () => {
     })();
 
     return () => { cancelled = true; };
-  }, [selectedBatch, selectedSection, selectedSubSection]);
+  }, [selectedBatch, selectedSection, selectedSubSection, profile?.id, profile?.batch_id, profile?.section, profile?.is_cr]);
 
   const notifications = useMemo(() => {
+    if (sectionPinLocked) return [];
+
     const recordNotifs = records.map(r => {
       const course = courses.find(c => c.id === r.course_id);
       const originalDate = r.created_at || r.date || new Date().toISOString();
@@ -382,7 +409,7 @@ const App: React.FC = () => {
     return [...recordNotifs, ...noticeNotifs, ...deadlineNotifs]
       .sort((a, b) => b.sortDate - a.sortDate)
       .slice(0, 30);
-  }, [records, notices, deadlines, selectedSection, readIds, courses]);
+  }, [records, notices, deadlines, selectedSection, readIds, courses, sectionPinLocked]);
 
   const markAsRead = (id: string) => {
     if (!readIds.includes(id)) {

@@ -8,10 +8,9 @@ import {
   Zap,
   BookOpen,
   ArrowRight,
-  Lock,
 } from 'lucide-react';
-import { useAuth } from '@/app/providers/AuthProvider';
-import { studentService } from '@/shared/services/studentService';
+import { useSectionAccess } from '@/shared/hooks/useSectionAccess';
+import ProtectedBlurShell from '@/shared/components/security/ProtectedBlurShell';
 import NoticeDetailModal from './NoticeDetailModal';
 import { sortNoticesByPriority } from '@/shared/lib/noticeUtils';
 
@@ -24,6 +23,7 @@ interface Props {
   onAction?: (type: string) => void;
   batchId: string;
   section: Section;
+  subSection?: string | null;
 }
 
 type Priority = 'low' | 'normal' | 'high' | 'urgent';
@@ -58,21 +58,16 @@ const PRIORITY: Record<
   },
 };
 
-const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, section }) => {
-  const { profile: crProfile } = useAuth();
+const NoticeBoard: React.FC<Props> = ({
+  notices,
+  courses,
+  onAction,
+  batchId,
+  section,
+  subSection,
+}) => {
+  const { locked, verifying } = useSectionAccess(batchId, section);
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
-  const [isLocked, setIsLocked] = useState(false);
-
-  React.useEffect(() => {
-    const checkSecurity = async () => {
-      try {
-        setIsLocked(await studentService.isSectionLocked(batchId, section, crProfile));
-      } catch (e) {
-        console.error('Security check failed:', e);
-      }
-    };
-    checkSecurity();
-  }, [batchId, section, crProfile?.id, crProfile?.batch_id, crProfile?.section]);
 
   const activeNotices = React.useMemo(() => {
     const active = notices.filter((n) => {
@@ -92,24 +87,95 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
 
   if (activeNotices.length === 0) return null;
 
+  const noticeList = (
+    <div className="space-y-2.5">
+      {visibleNotices.map((notice) => {
+        const courseCode = notice.course_id
+          ? courses.find((c) => c.id === notice.course_id)?.code
+          : null;
+        const p = PRIORITY[(notice.priority as Priority) || 'normal'];
+        const preview = notice.content?.trim();
+
+        return (
+          <div
+            key={notice.id}
+            className="relative rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors overflow-hidden group"
+          >
+            <span className={`absolute left-0 top-0 bottom-0 w-1 ${p.dot}`} aria-hidden />
+
+            <button
+              type="button"
+              onClick={() => !locked && setSelectedNotice(notice)}
+              className="w-full text-left pl-4 pr-3.5 py-3 cursor-pointer"
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  className={`mt-0.5 w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${p.chip}`}
+                >
+                  {p.icon}
+                </span>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="text-[15px] font-semibold text-slate-900 dark:text-white leading-snug line-clamp-1 min-w-0">
+                      {notice.title}
+                    </h3>
+                    <ArrowRight
+                      size={15}
+                      className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 shrink-0 transition-all duration-200"
+                    />
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <span
+                      className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${p.chip}`}
+                    >
+                      {p.label}
+                    </span>
+                    {courseCode && (
+                      <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400">
+                        <BookOpen size={12} /> {courseCode}
+                      </span>
+                    )}
+                    <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
+                      {format(parseISO(notice.created_at), 'MMM dd')}
+                    </span>
+                  </div>
+
+                  {preview ? (
+                    <p className="text-[13px] text-slate-600 dark:text-slate-300 leading-snug mt-1.5 line-clamp-1">
+                      {preview}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <>
-      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 lg:p-6">
+      <section className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 lg:p-6 shadow-sm">
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-indigo-500/15 to-violet-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center ring-1 ring-indigo-500/10">
               <Bell size={20} />
             </div>
             <div>
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Notice board</h2>
               <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {hasMore
-                  ? `Top ${DASHBOARD_LIMIT} of ${activeNotices.length} active`
-                  : `${activeNotices.length} active ${activeNotices.length === 1 ? 'announcement' : 'announcements'}`}
+                {locked
+                  ? `${activeNotices.length} protected ${activeNotices.length === 1 ? 'announcement' : 'announcements'}`
+                  : hasMore
+                    ? `Top ${DASHBOARD_LIMIT} of ${activeNotices.length} active`
+                    : `${activeNotices.length} active ${activeNotices.length === 1 ? 'announcement' : 'announcements'}`}
               </p>
             </div>
           </div>
-          {onAction && (
+          {onAction && !locked && (
             <button
               type="button"
               onClick={() => onAction('notices')}
@@ -120,87 +186,19 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
           )}
         </div>
 
-        <div className="space-y-2.5">
-          {visibleNotices.map((notice) => {
-            const courseCode = notice.course_id
-              ? courses.find((c) => c.id === notice.course_id)?.code
-              : null;
-            const p = PRIORITY[(notice.priority as Priority) || 'normal'];
-            const preview = notice.content?.trim();
-
-            return (
-              <div
-                key={notice.id}
-                className="relative rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 hover:border-indigo-200 dark:hover:border-indigo-800 transition-colors overflow-hidden group"
-              >
-                <span className={`absolute left-0 top-0 bottom-0 w-1 ${p.dot}`} aria-hidden />
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isLocked) {
-                      onAction?.('notices');
-                    } else {
-                      setSelectedNotice(notice);
-                    }
-                  }}
-                  className="w-full text-left pl-4 pr-3.5 py-3 cursor-pointer"
-                >
-                  <div className="flex items-start gap-3">
-                    <span
-                      className={`mt-0.5 w-7 h-7 rounded-md flex items-center justify-center shrink-0 ${p.chip}`}
-                    >
-                      {p.icon}
-                    </span>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <h3 className="text-[15px] font-semibold text-slate-900 dark:text-white leading-snug line-clamp-1 min-w-0">
-                          {notice.title}
-                        </h3>
-                        {!isLocked && (
-                          <ArrowRight
-                            size={15}
-                            className="text-slate-400 group-hover:text-indigo-600 group-hover:translate-x-0.5 shrink-0 transition-all duration-200"
-                          />
-                        )}
-                      </div>
-
-                      <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                        <span
-                          className={`text-[11px] font-bold px-2 py-0.5 rounded uppercase tracking-wide ${p.chip}`}
-                        >
-                          {p.label}
-                        </span>
-                        {courseCode && (
-                          <span className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-indigo-600 dark:text-indigo-400">
-                            <BookOpen size={12} /> {courseCode}
-                          </span>
-                        )}
-                        <span className="text-xs text-slate-500 dark:text-slate-400 tabular-nums">
-                          {format(parseISO(notice.created_at), 'MMM dd')}
-                        </span>
-                      </div>
-
-                      {isLocked ? (
-                        <div className="mt-2 inline-flex items-center gap-1.5 py-1 px-2.5 bg-white dark:bg-slate-900 rounded-md border border-dashed border-slate-300 dark:border-slate-700">
-                          <Lock size={11} className="text-amber-500" />
-                          <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                            Locked — tap to unlock
-                          </span>
-                        </div>
-                      ) : preview ? (
-                        <p className="text-[13px] text-slate-600 dark:text-slate-300 leading-snug mt-1.5 line-clamp-1">
-                          {preview}
-                        </p>
-                      ) : null}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            );
-          })}
-        </div>
+        <ProtectedBlurShell
+          locked={locked}
+          verifying={verifying}
+          batchId={batchId}
+          section={section}
+          subSection={subSection}
+          hint="Tap to unlock notices"
+          modalTitle="Unlock announcements"
+          modalDescription={`Announcements for Section ${section} are protected. Enter your student ID and section PIN from your CR.`}
+          submitLabel="Unlock announcements"
+        >
+          {noticeList}
+        </ProtectedBlurShell>
       </section>
 
       <NoticeDetailModal

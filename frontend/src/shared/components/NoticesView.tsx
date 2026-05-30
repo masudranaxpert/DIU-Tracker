@@ -13,9 +13,9 @@ import {
 } from 'lucide-react';
 import NativeSelect from './NativeSelect';
 import NoticeDetailModal from './NoticeDetailModal';
-import { useAuth } from '@/app/providers/AuthProvider';
+import ProtectedBlurShell from '@/shared/components/security/ProtectedBlurShell';
+import { useSectionAccess } from '@/shared/hooks/useSectionAccess';
 import { studentService, StudentSession } from '@/shared/services/studentService';
-import SectionAccessUnlock from './SectionAccessUnlock';
 import { Notice, Course, Section } from '@/shared/types/types';
 import { format, parseISO, isPast, isToday } from 'date-fns';
 import { resolveMediaUrl } from '@/shared/utils/mediaUrl';
@@ -58,32 +58,13 @@ const PRIORITY_ICONS: Record<Priority, React.ReactNode> = {
 };
 
 const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subSection }) => {
-  const { profile: crProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'active' | 'expired'>('overview');
   const [selectedNotice, setSelectedNotice] = useState<Notice | null>(null);
   const [courseFilter, setCourseFilter] = useState<string>('all');
-  const [isLocked, setIsLocked] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(true);
-
-  React.useEffect(() => {
-    const checkSecurity = async () => {
-      setIsVerifying(true);
-      try {
-        setIsLocked(await studentService.isSectionLocked(batchId, section, crProfile));
-      } catch (e) {
-        console.error('Security check failed:', e);
-      } finally {
-        setIsVerifying(false);
-      }
-    };
-    checkSecurity();
-    return studentService.subscribeSession(() => {
-      checkSecurity();
-    });
-  }, [batchId, section, crProfile?.id, crProfile?.batch_id, crProfile?.section]);
+  const { locked: isLocked, verifying: isVerifying } = useSectionAccess(batchId, section);
 
   const handleUnlocked = (_session: StudentSession) => {
-    setIsLocked(false);
+    /* session event refreshes useSectionAccess */
   };
 
   const { activeNotices, expiredNotices, noticesCourses } = useMemo(() => {
@@ -222,16 +203,18 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
           <div className="w-10 h-10 border-[3px] border-indigo-600/20 border-t-indigo-600 rounded-full animate-spin" />
           <p className="text-xs font-medium text-slate-500">Verifying access…</p>
         </div>
-      ) : isLocked ? (
-        <SectionAccessUnlock
+      ) : (
+        <ProtectedBlurShell
+          locked={isLocked}
           batchId={batchId}
           section={section}
           subSection={subSection}
-          description={`Announcements for Section ${section} are protected. Enter your student details and the PIN from your CR.`}
-          submitLabel="Unlock Announcements"
+          hint="Tap to unlock all notices"
+          modalTitle="Unlock announcements"
+          modalDescription={`Announcements for Section ${section} are protected. Enter your student details and the PIN from your CR.`}
+          submitLabel="Unlock announcements"
           onUnlocked={handleUnlocked}
-        />
-      ) : (
+        >
         <div className="tour-notices-list space-y-3">
           <AnimatePresence mode="popLayout">
             {displayedNotices.length === 0 ? (
@@ -263,7 +246,7 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.98 }}
                     transition={{ delay: index * 0.03 }}
-                    onClick={() => setSelectedNotice(notice)}
+                    onClick={() => !isLocked && setSelectedNotice(notice)}
                     className={`w-full text-left relative bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden cursor-pointer hover:border-indigo-200 dark:hover:border-indigo-800 hover:shadow-md transition-all duration-200 group ${isExpired ? 'opacity-70' : ''}`}
                   >
                     <span
@@ -357,6 +340,7 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
             />
           )}
         </div>
+        </ProtectedBlurShell>
       )}
 
       <NoticeDetailModal

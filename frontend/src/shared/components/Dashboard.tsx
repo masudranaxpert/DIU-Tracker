@@ -7,6 +7,7 @@ import CourseColumns from './dashboard/CourseColumns';
 import DeadlinesPanel from './dashboard/DeadlinesPanel';
 import DeadlineDetailModal from './dashboard/DeadlineDetailModal';
 import { isLabCourse } from './dashboard/dashboardUtils';
+import { useSectionAccess } from '@/shared/hooks/useSectionAccess';
 
 interface Props {
   courses: Course[];
@@ -17,6 +18,7 @@ interface Props {
   userProfile?: { sub_section?: string; section: string };
   batchId: string;
   section: string;
+  subSection?: string | null;
 }
 
 const Dashboard: React.FC<Props> = ({
@@ -27,8 +29,10 @@ const Dashboard: React.FC<Props> = ({
   onDateSelect,
   batchId,
   section,
+  subSection,
 }) => {
   const [selectedDeadline, setSelectedDeadline] = React.useState<Deadline | null>(null);
+  const { locked, verifying } = useSectionAccess(batchId, section);
 
   const activeNotices = React.useMemo(() => {
     const now = new Date();
@@ -69,6 +73,7 @@ const Dashboard: React.FC<Props> = ({
                 onAction={onAction}
                 batchId={batchId}
                 section={section as Section}
+                subSection={subSection}
               />
             </div>
           )}
@@ -85,6 +90,11 @@ const Dashboard: React.FC<Props> = ({
           upcoming={upcomingDeadlines}
           past={pastDeadlines}
           courses={courses}
+          locked={locked}
+          verifying={verifying}
+          batchId={batchId}
+          section={section as Section}
+          subSection={subSection}
           onSelect={setSelectedDeadline}
         />
       </div>

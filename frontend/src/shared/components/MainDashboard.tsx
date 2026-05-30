@@ -897,6 +897,7 @@ const MainDashboard: React.FC<Props> = ({
                                     userProfile={userProfile ? { section: userProfile.section, sub_section: userProfile.sub_section || undefined } : (selectedSection ? { section: selectedSection, sub_section: selectedSubSection || undefined } : undefined)}
                                     batchId={selectedBatch!}
                                     section={selectedSection!}
+                                    subSection={selectedSubSection}
                                 />
                             )}
                             {activeTab === 'calendar' && (
