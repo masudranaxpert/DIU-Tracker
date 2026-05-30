@@ -13,6 +13,9 @@ import {
 import { useAuth } from '@/app/providers/AuthProvider';
 import { studentService } from '@/shared/services/studentService';
 import NoticeDetailModal from './NoticeDetailModal';
+import { sortNoticesByPriority } from '@/shared/lib/noticeUtils';
+
+const DASHBOARD_LIMIT = 5;
 
 interface Props {
   notices: Notice[];
@@ -71,11 +74,17 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
     checkSecurity();
   }, [batchId, section, crProfile?.id, crProfile?.batch_id, crProfile?.section]);
 
-  const activeNotices = notices.filter((n) => {
-    if (!n.expires_at) return true;
-    const expDate = parseISO(n.expires_at);
-    return !isPast(expDate) || isToday(expDate);
-  });
+  const activeNotices = React.useMemo(() => {
+    const active = notices.filter((n) => {
+      if (!n.expires_at) return true;
+      const expDate = parseISO(n.expires_at);
+      return !isPast(expDate) || isToday(expDate);
+    });
+    return sortNoticesByPriority(active);
+  }, [notices]);
+
+  const visibleNotices = activeNotices.slice(0, DASHBOARD_LIMIT);
+  const hasMore = activeNotices.length > DASHBOARD_LIMIT;
 
   const selectedCourse = selectedNotice?.course_id
     ? courses.find((c) => c.id === selectedNotice.course_id) ?? null
@@ -94,7 +103,9 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
             <div>
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Notice board</h2>
               <p className="text-[13px] text-slate-500 dark:text-slate-400 mt-0.5">
-                {activeNotices.length} active {activeNotices.length === 1 ? 'announcement' : 'announcements'}
+                {hasMore
+                  ? `Top ${DASHBOARD_LIMIT} of ${activeNotices.length} active`
+                  : `${activeNotices.length} active ${activeNotices.length === 1 ? 'announcement' : 'announcements'}`}
               </p>
             </div>
           </div>
@@ -109,8 +120,8 @@ const NoticeBoard: React.FC<Props> = ({ notices, courses, onAction, batchId, sec
           )}
         </div>
 
-        <div className="space-y-2.5 max-h-[480px] overflow-y-auto custom-scrollbar pr-1">
-          {activeNotices.map((notice) => {
+        <div className="space-y-2.5">
+          {visibleNotices.map((notice) => {
             const courseCode = notice.course_id
               ? courses.find((c) => c.id === notice.course_id)?.code
               : null;

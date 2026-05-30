@@ -17,7 +17,7 @@ interface Props {
   onSelect: (deadline: Deadline) => void;
 }
 
-const VISIBLE = 6;
+const UPCOMING_LIMIT = 10;
 
 function DateBadge({ dateStr, daysLeft }: { dateStr: string; daysLeft: number }) {
   const date = parseISO(dateStr);
@@ -26,7 +26,7 @@ function DateBadge({ dateStr, daysLeft }: { dateStr: string; daysLeft: number })
 
   return (
     <div
-      className={`flex flex-col items-center justify-center w-[4.25rem] shrink-0 py-3 ${blockStyle}`}
+      className={`flex flex-col items-center justify-center w-[3.75rem] sm:w-[4.25rem] shrink-0 py-2.5 sm:py-3 ${blockStyle}`}
     >
       <span
         className={`text-[9px] font-bold uppercase tracking-widest ${
@@ -36,7 +36,7 @@ function DateBadge({ dateStr, daysLeft }: { dateStr: string; daysLeft: number })
         {format(date, 'MMM')}
       </span>
       <span
-        className={`text-2xl font-bold leading-none tabular-nums my-0.5 ${
+        className={`text-xl sm:text-2xl font-bold leading-none tabular-nums my-0.5 ${
           isMuted ? 'text-slate-900 dark:text-white' : ''
         }`}
       >
@@ -54,12 +54,12 @@ function DateBadge({ dateStr, daysLeft }: { dateStr: string; daysLeft: number })
 }
 
 const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) => {
-  const [showAll, setShowAll] = React.useState(false);
-  const displayed = showAll ? upcoming : upcoming.slice(0, VISIBLE);
+  const displayed = upcoming.slice(0, UPCOMING_LIMIT);
+  const overflowCount = upcoming.length - UPCOMING_LIMIT;
 
   return (
     <aside className="xl:col-span-4 tour-deadlines">
-      <div className="sticky top-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-h-[420px] flex flex-col overflow-hidden shadow-sm">
+      <div className="sticky top-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col overflow-hidden shadow-sm">
         <div className="flex items-center justify-between gap-3 px-5 py-4 lg:px-6 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
@@ -67,7 +67,11 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
             </div>
             <div className="min-w-0">
               <h2 className="text-base font-semibold text-slate-900 dark:text-white">Deadlines</h2>
-              <p className="text-[13px] text-slate-500 dark:text-slate-400 truncate">Upcoming & recent</p>
+              <p className="text-[13px] text-slate-500 dark:text-slate-400 truncate">
+                {upcoming.length > UPCOMING_LIMIT
+                  ? `Next ${UPCOMING_LIMIT} of ${upcoming.length}`
+                  : 'Upcoming & recent'}
+              </p>
             </div>
           </div>
           {upcoming.length > 0 && (
@@ -77,7 +81,7 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 lg:px-5 space-y-5">
+        <div className="px-4 py-4 lg:px-5 space-y-4">
           <section>
             <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2.5 px-0.5">
               Upcoming
@@ -90,7 +94,7 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
                 <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">New deadlines will show here</p>
               </div>
             ) : (
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {displayed.map((deadline) => {
                   const course = courses.find((c) => c.id === deadline.course_id);
                   const daysLeft = getDeadlineDaysLeft(deadline.date);
@@ -101,48 +105,42 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
                       <button
                         type="button"
                         onClick={() => onSelect(deadline)}
-                        className={`group w-full flex items-stretch rounded-lg border text-left transition-all duration-200 cursor-pointer overflow-hidden shadow-sm hover:shadow-md ${getCardBorderClass(daysLeft)}`}
+                        className={`group w-full flex items-stretch rounded-lg border text-left transition-colors duration-200 cursor-pointer overflow-hidden hover:shadow-sm ${getCardBorderClass(daysLeft)}`}
                       >
                         <DateBadge dateStr={deadline.date} daysLeft={daysLeft} />
 
-                        <div className="flex-1 min-w-0 py-3 px-3 flex items-center gap-2 bg-white dark:bg-slate-900 group-hover:bg-slate-50/90 dark:group-hover:bg-slate-800/40 transition-colors">
+                        <div className="flex-1 min-w-0 py-2.5 px-2.5 sm:py-3 sm:px-3 flex items-center gap-2 bg-white dark:bg-slate-900 group-hover:bg-slate-50/90 dark:group-hover:bg-slate-800/40 transition-colors">
                           <div className="flex-1 min-w-0">
-                            <p className="text-[14px] font-semibold text-slate-900 dark:text-white line-clamp-2 group-hover:text-slate-700 dark:group-hover:text-slate-100 transition-colors">
+                            <p className="text-[13px] sm:text-[14px] font-semibold text-slate-900 dark:text-white line-clamp-1 group-hover:text-slate-700 dark:group-hover:text-slate-100 transition-colors">
                               {deadline.title}
                             </p>
 
-                            <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                            <div className="flex flex-wrap items-center gap-1 mt-1.5">
                               <span
-                                className={`inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${getTypeBadgeClass(deadline.type)}`}
+                                className={`inline-flex text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${getTypeBadgeClass(deadline.type)}`}
                               >
                                 {deadline.type}
                               </span>
 
                               {course?.code && (
-                                <span className="inline-flex text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700">
+                                <span className="inline-flex text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded-md bg-slate-100 text-slate-600 ring-1 ring-slate-200/80 dark:bg-slate-800 dark:text-slate-400 dark:ring-slate-700">
                                   {course.code}
                                 </span>
                               )}
 
                               {countdown && (
                                 <span
-                                  className={`inline-flex text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${countdown.className}`}
+                                  className={`inline-flex text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md ${countdown.className}`}
                                 >
                                   {countdown.label}
                                 </span>
                               )}
                             </div>
-
-                            {deadline.description?.trim() && (
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 line-clamp-1 leading-relaxed">
-                                {deadline.description.trim()}
-                              </p>
-                            )}
                           </div>
 
                           <ChevronRight
-                            size={16}
-                            className="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 transition-colors"
+                            size={15}
+                            className="shrink-0 text-slate-300 dark:text-slate-600 group-hover:text-indigo-500 dark:group-hover:text-indigo-400 transition-colors"
                           />
                         </div>
                       </button>
@@ -152,20 +150,16 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
               </ul>
             )}
 
-            {upcoming.length > VISIBLE && (
-              <button
-                type="button"
-                onClick={() => setShowAll(!showAll)}
-                className="w-full mt-2 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
-              >
-                {showAll ? 'Show less' : `Show ${upcoming.length - VISIBLE} more`}
-              </button>
+            {overflowCount > 0 && (
+              <p className="mt-2.5 text-center text-[11px] font-semibold text-slate-400 dark:text-slate-500">
+                +{overflowCount} more in calendar
+              </p>
             )}
           </section>
 
           {past.length > 0 && (
-            <section className="pt-4 border-t border-slate-100 dark:border-slate-800">
-              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2.5 px-0.5">
+            <section className="pt-3 border-t border-slate-100 dark:border-slate-800">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-2 px-0.5">
                 Recent
               </p>
               <ul className="space-y-0.5">
@@ -176,7 +170,7 @@ const DeadlinesPanel: React.FC<Props> = ({ upcoming, past, courses, onSelect }) 
                       <button
                         type="button"
                         onClick={() => onSelect(deadline)}
-                        className="group w-full flex items-center gap-3 px-2 py-2.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors text-left cursor-pointer"
+                        className="group w-full flex items-center gap-3 px-2 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors text-left cursor-pointer"
                       >
                         <span className="text-xs font-bold text-slate-400 w-12 shrink-0 tabular-nums text-center">
                           {format(parseISO(deadline.date), 'd')}

@@ -133,7 +133,7 @@ const StudentProfilesView: React.FC<Props> = ({ batchId, section, isSectionLocke
             <input
               type="search"
               enterKeyHint="search"
-              placeholder="Search ID, name, group, or phone…"
+              placeholder="Search ID, name, or phone…"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-12 pr-4 py-3.5 sm:py-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl sm:rounded-2xl shadow-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 font-medium text-base sm:text-sm outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all"
@@ -251,14 +251,17 @@ const StudentProfilesView: React.FC<Props> = ({ batchId, section, isSectionLocke
                 ))}
               </AnimatePresence>
             </ul>
-            {totalPages > 1 && (
+            {filteredStudents.length > 0 && (
               <DirectoryPagination
                 page={page}
                 totalPages={totalPages}
                 total={total}
                 rangeStart={rangeStart}
                 rangeEnd={rangeEnd}
-                onPageChange={goToPage}
+                onPageChange={(p) => {
+                  goToPage(p);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
               />
             )}
           </>

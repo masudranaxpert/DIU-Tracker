@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell,
@@ -19,6 +19,11 @@ import SectionAccessUnlock from './SectionAccessUnlock';
 import { Notice, Course, Section } from '@/shared/types/types';
 import { format, parseISO, isPast, isToday } from 'date-fns';
 import { resolveMediaUrl } from '@/shared/utils/mediaUrl';
+import { useClientPagination } from '@/shared/hooks/useClientPagination';
+import DirectoryPagination from './ui/DirectoryPagination';
+import { sortNoticesByPriority } from '@/shared/lib/noticeUtils';
+
+const PAGE_SIZE = 10;
 
 interface Props {
   notices: Notice[];
@@ -105,8 +110,33 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
     if (courseFilter !== 'all') {
       base = base.filter((n) => n.course_id === courseFilter);
     }
-    return base;
+    return sortNoticesByPriority(base);
   }, [activeTab, activeNotices, expiredNotices, notices, courseFilter]);
+
+  const {
+    page,
+    total,
+    totalPages,
+    pageItems,
+    rangeStart,
+    rangeEnd,
+    goToPage,
+    resetPage,
+  } = useClientPagination(displayedNotices, PAGE_SIZE);
+
+  const prevFilterKey = useRef(`${activeTab}:${courseFilter}`);
+  useEffect(() => {
+    const key = `${activeTab}:${courseFilter}`;
+    if (prevFilterKey.current !== key) {
+      resetPage();
+      prevFilterKey.current = key;
+    }
+  }, [activeTab, courseFilter, resetPage]);
+
+  const handlePageChange = (next: number) => {
+    goToPage(next);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const selectedCourse = selectedNotice?.course_id
     ? courses.find((c) => c.id === selectedNotice.course_id) ?? null
@@ -215,7 +245,7 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
                 <p className="text-sm font-medium text-slate-500">No notices found</p>
               </motion.div>
             ) : (
-              displayedNotices.map((notice, index) => {
+              pageItems.map((notice, index) => {
                 const courseCode = notice.course_id
                   ? courses.find((c) => c.id === notice.course_id)?.code
                   : null;
@@ -315,6 +345,17 @@ const NoticesView: React.FC<Props> = ({ notices, courses, batchId, section, subS
               })
             )}
           </AnimatePresence>
+
+          {displayedNotices.length > 0 && (
+            <DirectoryPagination
+              page={page}
+              totalPages={totalPages}
+              total={total}
+              rangeStart={rangeStart}
+              rangeEnd={rangeEnd}
+              onPageChange={handlePageChange}
+            />
+          )}
         </div>
       )}
 
