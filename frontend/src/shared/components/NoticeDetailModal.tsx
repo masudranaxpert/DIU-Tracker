@@ -82,17 +82,14 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex flex-col sm:items-center sm:justify-center sm:p-4 bg-slate-950/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[200] flex flex-col sm:items-center sm:justify-center sm:p-4 sm:bg-slate-950/60 sm:backdrop-blur-sm"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
       aria-labelledby="notice-modal-title"
     >
-      {/* Mobile: small tap area above sheet (backdrop) — not a broken empty gap */}
-      <div className="flex-1 min-h-[6dvh] sm:hidden w-full" aria-hidden />
-
       <div
-        className="w-full sm:max-w-md flex flex-col h-[92dvh] sm:h-auto sm:max-h-[90vh] bg-white dark:bg-slate-900 sm:rounded-2xl rounded-t-[1.35rem] shadow-[0_-8px_40px_rgba(0,0,0,0.18)] sm:shadow-2xl border border-slate-200/80 dark:border-slate-700 overflow-hidden shrink-0"
+        className="w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-md flex flex-col bg-white dark:bg-slate-900 sm:rounded-2xl sm:shadow-2xl sm:border border-slate-200/80 dark:border-slate-700 overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header — gradient starts at very top; handle lives inside (no white strip) */}
@@ -100,8 +97,8 @@ const NoticeDetailModal: React.FC<Props> = ({ notice, course, onClose }) => {
           <div className={`pointer-events-none absolute -top-8 -right-8 w-32 h-32 rounded-full blur-2xl ${meta.glow}`} />
           <div className={`pointer-events-none absolute -bottom-6 -left-6 w-24 h-24 rounded-full blur-xl ${meta.glow}`} />
 
-          {/* Drag handle — on gradient, not separate white bar */}
-          <div className="sm:hidden flex justify-center pt-2.5 pb-1 relative z-10">
+          {/* Drag handle — mobile full-screen affordance */}
+          <div className="sm:hidden flex justify-center pt-[max(0.5rem,env(safe-area-inset-top))] pb-1 relative z-10">
             <span className="w-10 h-1 rounded-full bg-white/45" aria-hidden />
           </div>
 
