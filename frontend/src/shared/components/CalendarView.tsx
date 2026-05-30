@@ -102,8 +102,6 @@ const DEADLINE_COLORS: Record<string, string> = {
 
 /** Teal = university academic calendar (distinct from indigo records & deadline gradients) */
 const ACADEMIC_TEAL = {
-  dot: 'bg-teal-500',
-  dotShadow: 'shadow-teal-400/40',
   gridChip: 'bg-gradient-to-br from-teal-400 to-teal-600 text-white',
   panelBg: 'bg-teal-50/80 dark:bg-teal-950/25',
   panelBorder: 'border-teal-200/70 dark:border-teal-800/50',
@@ -452,7 +450,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                   const rowIdx = Math.floor(idx / 7);
                   const isZebra = rowIdx % 2 !== 0;
                   const hasResources = dayRecords.length > 0;
-                  const hasAcademic = dayAcademic.length > 0;
 
                   return (
                     <div
@@ -472,13 +469,6 @@ const CalendarView: React.FC<CalendarViewProps> = ({
                           }`}>
                           {format(day, 'd')}
                         </span>
-
-                        {hasAcademic && isCurMonth && (
-                          <div
-                            className={`absolute top-0.5 right-0.5 w-2 h-2 lg:w-2.5 lg:h-2.5 rounded-full ${ACADEMIC_TEAL.dot} border border-white dark:border-slate-900 shadow-sm ${ACADEMIC_TEAL.dotShadow}`}
-                            title="University academic calendar event"
-                          />
-                        )}
 
                         {hasResources && isCurMonth && (
                           <div className="flex items-center justify-center bg-indigo-600 text-white w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full shadow-sm shadow-indigo-500/20">
