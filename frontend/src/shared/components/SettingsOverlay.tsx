@@ -47,14 +47,14 @@ const SettingsOverlay: React.FC<Props> = ({
       />
 
       <div
-        className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100 dark:border-slate-800"
+        className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-100 dark:border-slate-800"
       >
         <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-900">
           <div>
             <h2 className="text-xl font-black text-slate-900 dark:text-white leading-none">Settings </h2>
             <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1">Control Center</p>
           </div>
-          <button onClick={onClose} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-400">
+          <button onClick={onClose} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all text-slate-400">
             <X size={20} />
           </button>
         </div>
@@ -65,9 +65,9 @@ const SettingsOverlay: React.FC<Props> = ({
             <div className="flex gap-4">
               <button
                 onClick={toggleTheme}
-                className="flex-1 flex flex-col items-center justify-center gap-3 p-5 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-indigo-500 transition-all group"
+                className="flex-1 flex flex-col items-center justify-center gap-3 p-5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-indigo-500 transition-all group"
               >
-                <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-[1.25rem] flex items-center justify-center text-indigo-500 group-hover:scale-90 transition-transform shadow-sm">
+                <div className="w-10 h-10 bg-white dark:bg-slate-900 rounded-xl flex items-center justify-center text-indigo-500 group-hover:scale-90 transition-transform shadow-sm">
                   {theme === 'light' ? <Moon size={18} strokeWidth={2} /> : <Sun size={18} strokeWidth={2} />}
                 </div>
                 <p className="font-black text-[11px] uppercase tracking-widest text-slate-900 dark:text-white">{theme === 'dark' ? 'Dark' : 'Light'}</p>
@@ -75,19 +75,19 @@ const SettingsOverlay: React.FC<Props> = ({
 
               <button
                 onClick={() => setIsFocusMode(!isFocusMode)}
-                className="flex-1 flex flex-col items-center justify-center gap-3 p-5 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-800 hover:border-indigo-500 transition-all group"
+                className="flex-1 flex flex-col items-center justify-center gap-3 p-5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 hover:border-indigo-500 transition-all group"
               >
-                <div className={`w-10 h-10 rounded-[1.25rem] flex items-center justify-center text-white group-hover:scale-90 transition-transform shadow-md ${isFocusMode ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-slate-400 shadow-slate-400/20'}`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white group-hover:scale-90 transition-transform shadow-md ${isFocusMode ? 'bg-emerald-500 shadow-emerald-500/20' : 'bg-slate-400 shadow-slate-400/20'}`}>
                   {isFocusMode ? <Eye size={18} strokeWidth={2.5} /> : <EyeOff size={18} strokeWidth={2.5} />}
                 </div>
                 <p className="font-black text-[11px] uppercase tracking-widest text-slate-900 dark:text-white">Eye Comport</p>
               </button>
             </div>
 
-            <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-3xl border border-slate-100 dark:border-slate-800">
+            <div className="p-6 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-[11px] font-black text-slate-500 uppercase tracking-widest">Font Size</h3>
-                <div className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-xl text-xs font-black">
+                <div className="bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1.5 rounded-lg text-xs font-black">
                   {fontScale}%
                 </div>
               </div>
@@ -129,9 +129,9 @@ const SettingsOverlay: React.FC<Props> = ({
 
             <div className="space-y-4">
               {/* Naim Hossain */}
-              <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800 group/dev">
+              <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 group/dev">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-indigo-100 dark:bg-indigo-900 shadow-md">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-indigo-100 dark:bg-indigo-900 shadow-md">
                     <img src="https://media.licdn.com/dms/image/v2/D5603AQHAJ73NfiP-EA/profile-displayphoto-crop_800_800/B56Zvuy.5dK4AI-/0/1769237902610?e=1779926400&v=beta&t=jU4JHT8mSkCK8oVPqJN_wBr9svKGJRXMyg31ABcwGTk" alt="Naim" className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
@@ -143,22 +143,22 @@ const SettingsOverlay: React.FC<Props> = ({
                   Frontend • Backend  • Architecture
                 </p>
                 <div className="flex gap-2">
-                  <a href="https://www.facebook.com/naim.hossain.355d" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://www.facebook.com/naim.hossain.355d" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
                     <Facebook size={12} /> Facebook
                   </a>
-                  <a href="https://github.com/Naim-006" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-900 dark:hover:bg-slate-700 hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://github.com/Naim-006" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-900 dark:hover:bg-slate-700 hover:text-white transition-all text-[9px] font-black uppercase">
                     <Github size={12} /> Github
                   </a>
-                  <a href="https://www.linkedin.com/in/naim-hossain-973a9432a/" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://www.linkedin.com/in/naim-hossain-973a9432a/" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
                     <Linkedin size={12} /> Linkedin
                   </a>
                 </div>
               </div>
 
               {/* Masud Rana */}
-              <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800 group/dev">
+              <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 group/dev">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-emerald-100 dark:bg-emerald-900 shadow-md">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-emerald-100 dark:bg-emerald-900 shadow-md">
                     <img src="https://avatars.githubusercontent.com/u/275231886?v=4" alt="Masud Rana" className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
@@ -170,7 +170,6 @@ const SettingsOverlay: React.FC<Props> = ({
                   {[
                     { label: 'Infrastructure', gradient: 'from-emerald-500 to-teal-600', shadow: 'shadow-emerald-500/20' },
                     { label: 'AI Integration', gradient: 'from-teal-500 to-cyan-600', shadow: 'shadow-teal-500/20' },
-                    { label: 'Sys Admin', gradient: 'from-green-600 to-emerald-700', shadow: 'shadow-green-600/20' },
                   ].map((skill) => (
                     <span
                       key={skill.label}
@@ -181,13 +180,13 @@ const SettingsOverlay: React.FC<Props> = ({
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <a href="https://www.facebook.com/masudranafaizan/" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://www.facebook.com/masudranafaizan/" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
                     <Facebook size={12} /> Facebook
                   </a>
-                  <a href="https://github.com/masudranaxpert" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-900 dark:hover:bg-slate-700 hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://github.com/masudranaxpert" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-slate-900 dark:hover:bg-slate-700 hover:text-white transition-all text-[9px] font-black uppercase">
                     <Github size={12} /> Github
                   </a>
-                  <a href="https://www.linkedin.com/in/masud-rana-216b6b222/" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://www.linkedin.com/in/masud-rana-216b6b222/" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
                     <Linkedin size={12} /> Linkedin
                   </a>
                 </div>
@@ -203,9 +202,9 @@ const SettingsOverlay: React.FC<Props> = ({
 
             <div className="space-y-4">
               {/* Mostak ratul  */}
-              <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-[2rem] border border-slate-100 dark:border-slate-800 group/dev">
+              <div className="p-5 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 group/dev">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-indigo-100 dark:bg-indigo-900 shadow-md">
+                  <div className="w-12 h-12 rounded-xl overflow-hidden bg-indigo-100 dark:bg-indigo-900 shadow-md">
                     <img src="https://media.licdn.com/dms/image/v2/D4E03AQFr1wZoluCgmg/profile-displayphoto-crop_800_800/B4EZhHkay1GYAM-/0/1753547387466?e=1779926400&v=beta&t=xr7kjE4w3TIczmPU5ud23kjeDScfSiCqeEZ16VLsc0g" alt="Naim" className="w-full h-full object-cover" />
                   </div>
                   <div className="min-w-0">
@@ -216,10 +215,10 @@ const SettingsOverlay: React.FC<Props> = ({
 
                 <div className="flex gap-2">
 
-                  <a href="https://www.facebook.com/md.mostak.ahmmed.ratul" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://www.facebook.com/md.mostak.ahmmed.ratul" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
                     <Facebook size={12} /> Facebook
                   </a>
-                  <a href="https://www.linkedin.com/in/md-mostak-ahmmed-ratul" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
+                  <a href="https://www.linkedin.com/in/md-mostak-ahmmed-ratul" target="_blank" rel="noreferrer" className="flex-1 py-2 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:bg-[#0077b5] hover:text-white transition-all text-[9px] font-black uppercase">
                     <Linkedin size={12} /> Linkedin
                   </a>
                 </div>
@@ -238,7 +237,7 @@ const SettingsOverlay: React.FC<Props> = ({
                 onLogout();
                 onClose();
               }}
-              className="w-full py-4 bg-rose-50 dark:bg-rose-950/20 text-rose-500 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-rose-100 dark:border-rose-900/30 hover:bg-rose-500 hover:text-white transition-all shadow-sm shadow-rose-500/10 active:scale-95"
+              className="w-full py-4 bg-rose-50 dark:bg-rose-950/20 text-rose-500 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3 border border-rose-100 dark:border-rose-900/30 hover:bg-rose-500 hover:text-white transition-all shadow-sm shadow-rose-500/10 active:scale-95"
             >
               <LogOut size={16} /> Logout Account
             </button>
