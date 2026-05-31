@@ -1,17 +1,21 @@
 from __future__ import annotations
 
+import io
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy import String, cast
 from sqlalchemy.orm import Session
 
+import httpcloak
 import models
 import schemas
 from database import get_db
 from services import qbank_submission_cache as qb_cache
 
 router = APIRouter(prefix="/qbank", tags=["qbank"])
+
 
 
 @router.get("/pdfs", response_model=schemas.QbPaginatedPdfsResponse)
@@ -141,3 +145,53 @@ def qb_force_refresh_submissions(question_id: int, db: Session = Depends(get_db)
         "status": "refreshing",
         "from_cache": False,
     }
+
+
+@router.get("/proxy-pdf")
+def qb_proxy_pdf(url: str):
+    """Proxy PDF files from diuqbank to bypass CORS and scraping protections."""
+    if not url.startswith("https://diuqbank.com"):
+        raise HTTPException(status_code=400, detail="Only diuqbank.com URLs are allowed")
+    try:
+        with httpcloak.Session(preset="chrome-latest") as session:
+            resp = session.get(
+                url,
+                headers={
+                    "Referer": "https://diuqbank.com/",
+                    "Accept": "application/pdf, */*",
+                },
+            )
+            if resp.status_code >= 400:
+                raise HTTPException(status_code=resp.status_code, detail="Failed to fetch PDF from source")
+            
+            body = getattr(resp, "content", None) or getattr(resp, "body", None)
+            if not body:
+                text = getattr(resp, "text", None)
+                if text and isinstance(text, str):
+                    body = text.encode("utf-8", errors="ignore")
+            
+            if not body:
+                raise HTTPException(status_code=500, detail="Empty PDF response received from diuqbank")
+                
+            headers = getattr(resp, "headers", {}) or {}
+            content_disposition = "inline; filename=question.pdf"
+            
+            # Extract Content-Disposition safely
+            cd_key = next((k for k in headers if k.lower() == "content-disposition"), None)
+            if cd_key:
+                cd_val = headers[cd_key]
+                if isinstance(cd_val, (list, tuple)) and cd_val:
+                    content_disposition = cd_val[0]
+                elif isinstance(cd_val, str):
+                    content_disposition = cd_val
+            
+            return StreamingResponse(
+                io.BytesIO(body),
+                media_type="application/pdf",
+                headers={
+                    "Content-Disposition": content_disposition,
+                }
+            )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

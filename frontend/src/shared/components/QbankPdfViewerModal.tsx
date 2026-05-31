@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ExternalLink, FileText, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
+import { ExternalLink, FileText, Loader2, RotateCcw, X, ZoomIn, ZoomOut } from 'lucide-react';
 import { resolveAttachmentPreview } from '@/shared/utils/attachmentPreview';
+import { ensurePdfJsWorker, getPdfJsDocumentInit } from '@/shared/services/pdfTools/pdfjsSetup';
 
 type QbankPdfViewerModalProps = {
   open: boolean;
@@ -11,8 +12,8 @@ type QbankPdfViewerModalProps = {
   onClose: () => void;
 };
 
-const MIN_ZOOM = 0.75;
-const MAX_ZOOM = 3;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 2.5;
 const ZOOM_STEP = 0.25;
 
 function clampZoom(value: number): number {
@@ -33,7 +34,8 @@ const QbankPdfViewerModal: React.FC<QbankPdfViewerModalProps> = ({
   onClose,
 }) => {
   const preview = pdfUrl ? resolveAttachmentPreview({ url: pdfUrl, type: 'pdf' }) : null;
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(0.9);
+  const [totalPages, setTotalPages] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const pinchRef = useRef<{ distance: number; scale: number } | null>(null);
   const scaleRef = useRef(scale);
@@ -49,13 +51,14 @@ const QbankPdfViewerModal: React.FC<QbankPdfViewerModalProps> = ({
   }, []);
 
   const resetZoom = useCallback(() => {
-    setScale(1);
+    setScale(0.9);
     scrollRef.current?.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
     if (!open) {
-      setScale(1);
+      setScale(0.9);
+      setTotalPages(0);
       pinchRef.current = null;
     }
   }, [open, pdfUrl]);
@@ -137,7 +140,9 @@ const QbankPdfViewerModal: React.FC<QbankPdfViewerModalProps> = ({
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-semibold text-white">{title}</p>
-              <p className="text-[11px] text-slate-400">{zoomPercent}% · Pinch or use zoom</p>
+              <p className="text-[11px] text-slate-400">
+                {zoomPercent}% · {totalPages ? `${totalPages} pages` : 'PDF Engine'} · Pinch to zoom
+              </p>
             </div>
 
             <div className="flex shrink-0 items-center gap-0.5 rounded-lg border border-slate-700/80 bg-slate-800/80 p-0.5">
@@ -189,43 +194,24 @@ const QbankPdfViewerModal: React.FC<QbankPdfViewerModalProps> = ({
 
           <div
             ref={scrollRef}
-            className="relative min-h-0 flex-1 overflow-auto overscroll-contain bg-[#0b0f1a] touch-pan-x touch-pan-y"
+            className="relative min-h-0 flex-1 overflow-auto overscroll-contain bg-[#0b0f1a] touch-pan-x touch-pan-y custom-scrollbar"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            {preview?.mode === 'iframe' && preview.src ? (
-              <div
-                className="origin-top-left"
-                style={{
-                  transform: `scale(${scale})`,
-                  width: `${100 / scale}%`,
-                  minHeight: `${100 / scale}%`,
-                }}
-              >
-                <iframe
-                  src={preview.src}
-                  title={title}
-                  className="block h-[100dvh] w-full min-h-[100dvh] border-0 bg-white pointer-events-none"
-                  allow="autoplay"
-                />
-              </div>
+            {pdfUrl ? (
+              <PdfPagesViewer
+                pdfUrl={pdfUrl}
+                scale={scale}
+                onPageCount={setTotalPages}
+              />
             ) : (
               <div className="flex h-full min-h-[50vh] flex-col items-center justify-center gap-3 px-6 text-center">
-                <p className="text-sm text-slate-300">Preview unavailable in app.</p>
-                <a
-                  href={preview?.openUrl || pdfUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white"
-                >
-                  Open PDF link
-                  <ExternalLink size={16} />
-                </a>
+                <p className="text-sm text-slate-300">No PDF URL provided.</p>
               </div>
             )}
           </div>
 
           {preview?.openUrl ? (
-            <div className="shrink-0 border-t border-slate-800 bg-slate-900/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <div className="shrink-0 border-t border-slate-800 bg-slate-900/95 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-top))]">
               <a
                 href={preview.openUrl}
                 target="_blank"
@@ -241,6 +227,190 @@ const QbankPdfViewerModal: React.FC<QbankPdfViewerModalProps> = ({
       )}
     </AnimatePresence>,
     document.body,
+  );
+};
+
+interface PdfPagesViewerProps {
+  pdfUrl: string;
+  scale: number;
+  onPageCount?: (count: number) => void;
+}
+
+const PdfPagesViewer: React.FC<PdfPagesViewerProps> = ({ pdfUrl, scale, onPageCount }) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [numPages, setNumPages] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const pdfRef = useRef<any>(null);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    setError(null);
+    setNumPages(0);
+    setProgress(0);
+
+    const loadPdf = async () => {
+      try {
+        const pdfjs = ensurePdfJsWorker();
+        const docInit = getPdfJsDocumentInit();
+
+        let resolvedUrl = pdfUrl;
+        if (pdfUrl.includes('diuqbank.com')) {
+          const apiBase = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
+          resolvedUrl = `${apiBase}/qbank/proxy-pdf?url=${encodeURIComponent(pdfUrl)}`;
+        }
+
+        const loadingTask = pdfjs.getDocument({
+          url: resolvedUrl,
+          ...docInit,
+        });
+
+        loadingTask.onProgress = (progressData: { loaded: number; total: number }) => {
+          if (progressData.total > 0 && active) {
+            setProgress(Math.round((progressData.loaded / progressData.total) * 100));
+          }
+        };
+
+        const pdf = await loadingTask.promise;
+        if (!active) return;
+
+        pdfRef.current = pdf;
+        setNumPages(pdf.numPages);
+        onPageCount?.(pdf.numPages);
+        setLoading(false);
+      } catch (err) {
+        if (!active) return;
+        console.error('Error loading PDF:', err);
+        setError(err instanceof Error ? err.message : 'Could not load PDF document');
+        setLoading(false);
+      }
+    };
+
+    loadPdf();
+
+    return () => {
+      active = false;
+      if (pdfRef.current) {
+        pdfRef.current.destroy();
+        pdfRef.current = null;
+      }
+    };
+  }, [pdfUrl]);
+
+  return (
+    <div className="flex flex-col items-center gap-4 py-6 px-4">
+      {loading && (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 text-slate-400">
+          <Loader2 className="animate-spin text-indigo-500" size={32} />
+          <p className="text-sm font-bold uppercase tracking-wider text-slate-400">
+            Loading document {progress > 0 ? `(${progress}%)` : ''}…
+          </p>
+        </div>
+      )}
+
+      {error && (
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-2 text-red-400 p-6 text-center">
+          <p className="text-sm font-bold">{error}</p>
+          <p className="text-xs text-slate-500">Failed to render PDF using PDF.js engine.</p>
+        </div>
+      )}
+
+      {!loading && !error && numPages > 0 && (
+        Array.from({ length: numPages }).map((_, index) => (
+          <PdfPageItem
+            key={index}
+            pdf={pdfRef.current}
+            pageNumber={index + 1}
+            scale={scale}
+          />
+        ))
+      )}
+    </div>
+  );
+};
+
+interface PdfPageItemProps {
+  pdf: any;
+  pageNumber: number;
+  scale: number;
+}
+
+const PdfPageItem: React.FC<PdfPageItemProps> = ({ pdf, pageNumber, scale }) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [rendering, setRendering] = useState(true);
+  const renderTaskRef = useRef<any>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    const renderPage = async () => {
+      if (!canvasRef.current || !pdf) return;
+      setRendering(true);
+
+      // Cancel previous render task if active
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+
+      try {
+        const page = await pdf.getPage(pageNumber);
+        if (!active) return;
+
+        const canvas = canvasRef.current;
+        const context = canvas.getContext('2d');
+        if (!context) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        const viewport = page.getViewport({ scale: scale * dpr });
+
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        canvas.style.width = `${viewport.width / dpr}px`;
+        canvas.style.height = `${viewport.height / dpr}px`;
+
+        const renderContext = {
+          canvasContext: context,
+          viewport: viewport,
+        };
+
+        const renderTask = page.render(renderContext);
+        renderTaskRef.current = renderTask;
+
+        await renderTask.promise;
+        if (!active) return;
+        setRendering(false);
+      } catch (err: any) {
+        if (err.name === 'HeadingStatusPending' || err.name === 'RenderingCancelledException') {
+          return;
+        }
+        console.error('Error rendering page:', err);
+        setRendering(false);
+      }
+    };
+
+    renderPage();
+
+    return () => {
+      active = false;
+      if (renderTaskRef.current) {
+        renderTaskRef.current.cancel();
+      }
+    };
+  }, [pdf, pageNumber, scale]);
+
+  return (
+    <div className="relative rounded-lg shadow-2xl border border-slate-800 bg-[#0b0f1a] overflow-hidden max-w-full">
+      <canvas ref={canvasRef} className="block max-w-full" />
+      {rendering && (
+        <div className="absolute inset-0 flex items-center justify-center bg-slate-950/20 backdrop-blur-[1px]">
+          <Loader2 className="animate-spin text-indigo-500" size={24} />
+        </div>
+      )}
+      <div className="absolute bottom-2.5 right-3.5 px-2 py-1 bg-slate-900/90 text-slate-400 text-[10px] font-bold rounded border border-slate-800 pointer-events-none select-none">
+        Page {pageNumber}
+      </div>
+    </div>
   );
 };
 
