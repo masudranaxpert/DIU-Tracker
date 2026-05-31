@@ -661,3 +661,34 @@ class PushTokenRegister(BaseModel):
 
 class PushTokenUnregister(BaseModel):
     fcm_token: str
+
+
+class RoutineItemBase(BaseModel):
+    day: str
+    course_code: str
+    course_name: str
+    teacher: Optional[str] = None
+    room: Optional[str] = None
+    start_time: str
+    end_time: str
+    sub_section: Optional[str] = None
+
+
+class RoutineItemCreate(RoutineItemBase):
+    pass
+
+
+class RoutineItemResponse(RoutineItemBase):
+    id: str
+    batch_id: str
+    section: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class RoutineSaveRequest(BaseModel):
+    batch_id: str
+    section: str
+    classes: List[RoutineItemBase]

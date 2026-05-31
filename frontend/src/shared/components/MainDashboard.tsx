@@ -36,6 +36,7 @@ import { isNativeApp } from '@/shared/lib/nativeApp';
 
 const ToolsView = lazy(() => import('./tools/ToolsView'));
 const CoverPageView = lazy(() => import('./cover/CoverPageView'));
+const RoutineView = lazy(() => import('./RoutineView'));
 import { Section, AcademicRecord, Theme, AppNotification, Course, Batch, Notice, Deadline } from '@/shared/types/types';
 import Dashboard from './Dashboard';
 import CalendarView from './CalendarView';
@@ -89,7 +90,7 @@ interface Props {
     isOffline?: boolean;
 }
 
-type AdminPanelTab = 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE' | 'STUDENTS';
+type AdminPanelTab = 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE' | 'STUDENTS' | 'ROUTINE';
 
 // CR admin sub-tabs <-> URL segments, so each sub-tab is a real, shareable route.
 const ADMIN_TAB_TO_URL: Record<AdminPanelTab, string> = {
@@ -101,6 +102,7 @@ const ADMIN_TAB_TO_URL: Record<AdminPanelTab, string> = {
     DEADLINES: 'deadlines',
     PROFILE: 'profile',
     STUDENTS: 'students',
+    ROUTINE: 'routine',
 };
 
 const URL_TO_ADMIN_TAB: Record<string, AdminPanelTab> = Object.fromEntries(
@@ -171,7 +173,8 @@ const MainDashboard: React.FC<Props> = ({
             admin: "CR Admin Panel",
             student_profiles: "Student Directory",
             tools: "PDF Tools",
-            cover: "Cover Page"
+            cover: "Cover Page",
+            routine: "Class Routine"
         };
 
         const pageTitle = tabTitles[activeTab] || "Student Platform";
@@ -385,6 +388,7 @@ const MainDashboard: React.FC<Props> = ({
                 title: 'General',
                 items: [
                     { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Overview', color: 'text-indigo-500', activeBg: 'bg-indigo-600' },
+                    { id: 'routine', icon: <Clock size={20} />, label: 'Routine', color: 'text-indigo-500', activeBg: 'bg-indigo-600' },
                     { id: 'calendar', icon: <CalendarIcon size={20} />, label: 'Calendar View', color: 'text-indigo-500', activeBg: 'bg-indigo-600' },
                 ]
             },
@@ -979,6 +983,19 @@ const MainDashboard: React.FC<Props> = ({
                                 />
                             )}
                             {activeTab === 'groups' && <GroupRegisterView courses={courses} section={selectedSection} userSubSection={selectedSubSection || undefined} batchId={selectedBatch!} />}
+                            {activeTab === 'routine' && (
+                                <Suspense fallback={
+                                    <div className="flex items-center justify-center min-h-[40vh] text-slate-400 text-sm font-bold">
+                                        Loading routine…
+                                    </div>
+                                }>
+                                    <RoutineView
+                                        batchId={selectedBatch!}
+                                        section={selectedSection!}
+                                        subSection={selectedSubSection || undefined}
+                                    />
+                                </Suspense>
+                            )}
                             {activeTab === 'question_bank' && <QuestionBankView />}
                             {activeTab === 'tools' && (
                                 <Suspense fallback={

@@ -2,6 +2,7 @@
 CRUD package — domain-split modules; import via `import crud` (unchanged for routers).
 """
 from crud.academic_calendar import get_academic_calendar, save_academic_calendar
+from crud.routines import get_routines, save_routine, delete_routine
 from crud.admin_portal import (
     list_crs_admin,
     list_feedbacks_admin,
@@ -130,6 +131,9 @@ __all__ = [
     "list_crs_admin",
     "get_academic_calendar",
     "save_academic_calendar",
+    "get_routines",
+    "save_routine",
+    "delete_routine",
     "upsert_push_token",
     "delete_push_token",
     "delete_push_tokens_bulk",

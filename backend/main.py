@@ -19,6 +19,7 @@ from routers import (
     qbank,
     academic_calendar,
     push,
+    routines,
 )
 from commands import run_cli
 
@@ -76,6 +77,7 @@ app.include_router(rclone.router)
 app.include_router(drive.router)
 app.include_router(academic_calendar.router)
 app.include_router(push.router)
+app.include_router(routines.router)
 
 ensure_upload_dirs()
 _avatars_dir = Path(__file__).resolve().parent / "uploads" / "avatars"

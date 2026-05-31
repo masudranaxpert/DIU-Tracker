@@ -66,6 +66,7 @@ class Batch(Base):
     feedbacks = relationship("Feedback", back_populates="batch", cascade="all, delete-orphan")
     students = relationship("Student", back_populates="batch", cascade="all, delete-orphan")
     section_pins = relationship("SectionPin", back_populates="batch", cascade="all, delete-orphan")
+    routines = relationship("Routine", back_populates="batch", cascade="all, delete-orphan")
 
 
 class SectionPin(Base):
@@ -407,3 +408,22 @@ class AcademicCalendar(Base):
     show_on_calendar_view: Mapped[bool] = mapped_column(Boolean, default=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     updated_by: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+
+
+class Routine(Base):
+    __tablename__ = "routines"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=generate_uuid)
+    batch_id: Mapped[str] = mapped_column(String, ForeignKey("batches.id", ondelete="CASCADE"), nullable=False)
+    section: Mapped[str] = mapped_column(String, nullable=False)
+    day: Mapped[str] = mapped_column(String, nullable=False)
+    course_code: Mapped[str] = mapped_column(String, nullable=False)
+    course_name: Mapped[str] = mapped_column(String, nullable=False)
+    teacher: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    room: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    start_time: Mapped[str] = mapped_column(String, nullable=False)
+    end_time: Mapped[str] = mapped_column(String, nullable=False)
+    sub_section: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+    batch = relationship("Batch", back_populates="routines")

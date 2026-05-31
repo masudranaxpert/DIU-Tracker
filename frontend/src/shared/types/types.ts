@@ -208,3 +208,18 @@ export interface Feedback {
   student_id?: string;
   created_at: string;
 }
+
+export interface RoutineItem {
+  id: string;
+  batch_id: string;
+  section: string;
+  day: string;
+  course_code: string;
+  course_name: string;
+  teacher?: string;
+  room?: string;
+  start_time: string;
+  end_time: string;
+  sub_section?: string;
+  created_at?: string;
+}

@@ -1,7 +1,8 @@
 
 import React, { useState, useRef } from 'react';
 import { useAuth } from '@/app/providers/AuthProvider';
-import { Course, AcademicRecord, EntryType, Section, Deadline } from '@/shared/types/types';
+import { Course, AcademicRecord, EntryType, Section, Deadline, RoutineItem } from '@/shared/types/types';
+import { routineService } from '@/shared/services/routineService';
 import { SECTIONS } from '@/shared/utils/constants';
 import { Plus, Trash2, CheckCircle2, MapPin, Clock, GraduationCap, AlertCircle, Link, Edit2, X, Upload, Loader2, PlusCircle, Bell, Users, LayoutDashboard, Calendar, FileText, Sparkles, ChevronRight, Save, BookOpen, User, Flag, ShieldAlert, Search, Info, Facebook, MessageCircle, Send, Bot, Tag, Layers, UserSquare2, Building2, Phone, Mail, ExternalLink } from 'lucide-react';
 import NativeSelect from './NativeSelect';
@@ -50,7 +51,7 @@ interface Props {
 }
 
 
-type AdminTab = 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE' | 'STUDENTS';
+type AdminTab = 'OVERVIEW' | 'ACADEMIC' | 'COURSES' | 'GROUPS' | 'NOTICES' | 'DEADLINES' | 'PROFILE' | 'STUDENTS' | 'ROUTINE';
 
 const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, section, batchId, onAddRecord, onUpdateRecord, onDeleteRecord, onAddCourse, onUpdateCourse, onDeleteCourse, onAddNotice, onUpdateNotice, onDeleteNotice, onAddDeadline, onUpdateDeadline, onDeleteDeadline, initialTab, onTabChange }) => {
 
@@ -77,6 +78,150 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
   const [editingCourseId, setEditingCourseId] = useState<string | null>(null);
   const [editingNoticeId, setEditingNoticeId] = useState<string | null>(null);
   const [editingDeadlineId, setEditingDeadlineId] = useState<string | null>(null);
+
+  const [routineInput, setRoutineInput] = useState('');
+  const [routineClasses, setRoutineClasses] = useState<Omit<RoutineItem, 'id' | 'batch_id' | 'section' | 'created_at'>[]>([]);
+  const [routinePreviewError, setRoutinePreviewError] = useState<string | null>(null);
+  const [isFetchingRoutine, setIsFetchingRoutine] = useState(false);
+  const [isSavingRoutine, setIsSavingRoutine] = useState(false);
+  const [existingRoutine, setExistingRoutine] = useState<RoutineItem[]>([]);
+  const [copiedPrompt, setCopiedPrompt] = useState(false);
+
+  const aiPrompt = `Identify all class timings, course codes, course titles, teacher initials, and room numbers for our specific section.
+Convert them into a JSON array of class schedule objects.
+For each class:
+- Identify the day (must be "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", or "Friday")
+- Extract course code (e.g. "CSE212", "MAT211")
+- Extract course title (e.g. "Discrete Mathematics", "Engineering Mathematics")
+- Extract teacher initials (e.g. "RKR", "SAR")
+- Extract room number (e.g. "KT-518", "ANX1-207")
+- Extract class start time (in 24-hour HH:MM format, e.g. "11:30" or "08:30")
+- Extract class end time (in 24-hour HH:MM format, e.g. "13:00" or "11:30")
+- Extract sub-section (if it is a lab divided into sub-sections like "J1", "J2", otherwise leave blank or null)
+
+Ensure the output is ONLY a valid JSON array matching the structure:
+[
+  {
+    "day": "Saturday",
+    "course_code": "CSE214",
+    "course_name": "Algorithms Lab",
+    "teacher": "AHAK",
+    "room": "G1-003",
+    "start_time": "08:30",
+    "end_time": "11:30",
+    "sub_section": "J2"
+  }
+]
+No markdown wrapping (like \`\`\`json), no conversation, no explanation. Just raw JSON.`;
+
+  const handleCopyPrompt = () => {
+    navigator.clipboard.writeText(aiPrompt);
+    setCopiedPrompt(true);
+    setTimeout(() => setCopiedPrompt(false), 2000);
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'ROUTINE' && batchId && section) {
+      const loadRoutine = async () => {
+        setIsFetchingRoutine(true);
+        try {
+          const res = await routineService.fetchRoutine(batchId, section);
+          setExistingRoutine(res);
+        } catch (e) {
+          console.error(e);
+        } finally {
+          setIsFetchingRoutine(false);
+        }
+      };
+      loadRoutine();
+    }
+  }, [activeTab, batchId, section]);
+
+  React.useEffect(() => {
+    if (!routineInput.trim()) {
+      setRoutineClasses([]);
+      setRoutinePreviewError(null);
+      return;
+    }
+    try {
+      let jsonText = routineInput.trim();
+      if (jsonText.startsWith('```')) {
+        jsonText = jsonText.replace(/^```[a-zA-Z]*\n/, '').replace(/\n```$/, '');
+      }
+      const parsed = JSON.parse(jsonText);
+      if (!Array.isArray(parsed)) {
+        throw new Error('Root element must be a JSON array.');
+      }
+      const validated: Omit<RoutineItem, 'id' | 'batch_id' | 'section' | 'created_at'>[] = [];
+      const validDays = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+      for (let i = 0; i < parsed.length; i++) {
+        const item = parsed[i];
+        if (!item.day || !validDays.includes(item.day)) {
+          throw new Error(`Item ${i + 1} has invalid day "${item.day}". Must be one of: ${validDays.join(', ')}`);
+        }
+        if (!item.course_code || !item.course_name) {
+          throw new Error(`Item ${i + 1} is missing course_code or course_name.`);
+        }
+        if (!item.start_time || !item.end_time) {
+          throw new Error(`Item ${i + 1} is missing start_time or end_time.`);
+        }
+        validated.push({
+          day: item.day,
+          course_code: String(item.course_code).trim(),
+          course_name: String(item.course_name).trim(),
+          teacher: item.teacher ? String(item.teacher).trim() : undefined,
+          room: item.room ? String(item.room).trim() : undefined,
+          start_time: String(item.start_time).trim(),
+          end_time: String(item.end_time).trim(),
+          sub_section: item.sub_section ? String(item.sub_section).trim() : undefined,
+        });
+      }
+      setRoutineClasses(validated);
+      setRoutinePreviewError(null);
+    } catch (e: any) {
+      setRoutineClasses([]);
+      setRoutinePreviewError(e.message || 'Invalid JSON format');
+    }
+  }, [routineInput]);
+
+  const handleSaveRoutine = async () => {
+    if (routineClasses.length === 0) {
+      alert('No valid classes found. Please paste the JSON output from AI.');
+      return;
+    }
+    setIsSavingRoutine(true);
+    try {
+      const res = await routineService.saveRoutine(batchId, section, routineClasses);
+      setExistingRoutine(res);
+      setRoutineInput('');
+      setRoutineClasses([]);
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 3000);
+    } catch (e: any) {
+      console.error(e);
+      alert('Failed to save routine: ' + e.message);
+    } finally {
+      setIsSavingRoutine(false);
+    }
+  };
+
+  const handleDeleteRoutine = async () => {
+    if (!await dialog.confirm('Are you sure you want to clear the entire class routine for this section?', 'Clear Routine')) {
+      return;
+    }
+    setIsSavingRoutine(true);
+    try {
+      await routineService.deleteRoutine(batchId, section);
+      setExistingRoutine([]);
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 3000);
+    } catch (e: any) {
+      console.error(e);
+      alert('Failed to delete routine: ' + e.message);
+    } finally {
+      setIsSavingRoutine(false);
+    }
+  };
 
   const [profileName, setProfileName] = useState(profile?.full_name || '');
   const [facebookUrl, setFacebookUrl] = useState(profile?.facebook_url || '');
@@ -761,6 +906,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
               { id: 'NOTICES', label: 'Notices', icon: <Bell size={18} /> },
               { id: 'DEADLINES', label: 'Deadlines', icon: <Flag size={18} /> },
               { id: 'STUDENTS', label: 'Students', icon: <Users size={18} /> },
+              { id: 'ROUTINE', label: 'Class Routine', icon: <Clock size={18} /> },
               { id: 'PROFILE', label: 'Settings', icon: <User size={18} /> },
             ].map((tab) => (
               <button
@@ -793,6 +939,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                 {activeTab === 'NOTICES' && <Bell size={20} className="text-amber-500" />}
                 {activeTab === 'DEADLINES' && <Flag size={20} className="text-rose-500" />}
                 {activeTab === 'STUDENTS' && <Users size={20} className="text-indigo-500" />}
+                {activeTab === 'ROUTINE' && <Clock size={20} className="text-sky-500" />}
                 {activeTab === 'PROFILE' && <User size={20} className="text-slate-500" />}
               </div>
               <span className="font-black text-[11px] uppercase tracking-widest text-left">
@@ -803,6 +950,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                 {activeTab === 'NOTICES' && 'Notice Board'}
                 {activeTab === 'DEADLINES' && 'Deadlines'}
                 {activeTab === 'STUDENTS' && 'Student Management'}
+                {activeTab === 'ROUTINE' && 'Class Routine'}
                 {activeTab === 'PROFILE' && 'Settings'}
               </span>
               <div className="flex items-center pointer-events-none">
@@ -822,6 +970,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                     { id: 'NOTICES', label: 'Notice Board ', icon: <Bell size={16} />, color: 'text-amber-500' },
                     { id: 'DEADLINES', label: 'Deadlines ', icon: <Flag size={16} />, color: 'text-rose-500' },
                     { id: 'STUDENTS', label: 'Students ', icon: <Users size={16} />, color: 'text-indigo-500' },
+                    { id: 'ROUTINE', label: 'Class Routine', icon: <Clock size={16} />, color: 'text-sky-500' },
                     { id: 'PROFILE', label: 'Settings', icon: <User size={16} />, color: 'text-slate-500' },
                   ].map((tab) => (
                     <button
@@ -863,6 +1012,7 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
               {activeTab === 'GROUPS' && 'Groups'}
               {activeTab === 'NOTICES' && 'Notice Board'}
               {activeTab === 'DEADLINES' && 'Deadlines'}
+              {activeTab === 'ROUTINE' && 'Class Routine'}
               {activeTab === 'PROFILE' && 'Settings'}
             </h1>
             <p className="text-[9px] lg:text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">Section {section} Control Center</p>
@@ -2188,6 +2338,212 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'ROUTINE' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <div className="bg-slate-50 dark:bg-slate-800/20 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-6">
+                <div>
+                  <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                    <Bot size={18} className="text-indigo-600" /> AI Class Routine Importer
+                  </h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
+                    Generate routine data in seconds using artificial intelligence
+                  </p>
+                </div>
+
+                <div className="bg-slate-100/50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">AI Prompt Helper</span>
+                    <button
+                      onClick={handleCopyPrompt}
+                      className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-indigo-50 dark:hover:bg-slate-700/80 hover:text-indigo-600 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer animate-pulse"
+                    >
+                      <Save size={10} />
+                      {copiedPrompt ? 'Copied!' : 'Copy Prompt'}
+                    </button>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-h-24 overflow-y-auto custom-scrollbar bg-white/40 dark:bg-black/10 p-3 rounded-lg border border-slate-200/20 dark:border-slate-800/40 select-all">
+                    {aiPrompt}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
+                    Paste AI JSON Output
+                  </label>
+                  <textarea
+                    rows={8}
+                    placeholder="[&#10;  {&#10;    &quot;day&quot;: &quot;Saturday&quot;,&#10;    &quot;course_code&quot;: &quot;CSE212&quot;,&#10;    &quot;course_name&quot;: &quot;Discrete Mathematics&quot;,&#10;    &quot;teacher&quot;: &quot;RKR&quot;,&#10;    &quot;room&quot;: &quot;KT-518&quot;,&#10;    &quot;start_time&quot;: &quot;11:30&quot;,&#10;    &quot;end_time&quot;: &quot;13:00&quot;&#10;  }&#10;]"
+                    value={routineInput}
+                    onChange={(e) => setRoutineInput(e.target.value)}
+                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-mono text-xs dark:text-white transition-colors"
+                  />
+                </div>
+
+                {routinePreviewError && (
+                  <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 rounded-xl flex items-start gap-3">
+                    <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={16} />
+                    <div>
+                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Syntax / Validation Error</p>
+                      <p className="text-xs text-rose-700 dark:text-rose-400 font-bold mt-1 leading-normal">{routinePreviewError}</p>
+                    </div>
+                  </div>
+                )}
+
+                {routineClasses.length > 0 && !routinePreviewError && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl flex items-start gap-3">
+                      <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={16} />
+                      <div>
+                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Valid JSON Format</p>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold mt-1 leading-normal">
+                          Parsed {routineClasses.length} class schedule items. Ready to import.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900/20">
+                      <table className="w-full text-left text-xs border-collapse">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 sticky top-0 border-b border-slate-100 dark:border-slate-800">
+                          <tr>
+                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Day</th>
+                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Time</th>
+                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Code</th>
+                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Room/Tchr</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {routineClasses.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/10">
+                              <td className="p-2.5 font-bold text-slate-700 dark:text-slate-300">{item.day.substring(0, 3)}</td>
+                              <td className="p-2.5 font-medium text-slate-600 dark:text-slate-400">{item.start_time}-{item.end_time}</td>
+                              <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">{item.course_code} {item.sub_section ? `(${item.sub_section})` : ''}</td>
+                              <td className="p-2.5 font-medium text-slate-600 dark:text-slate-400">{item.room || '-'}/{item.teacher || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <button
+                      onClick={handleSaveRoutine}
+                      disabled={isSavingRoutine}
+                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-500/50 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
+                    >
+                      {isSavingRoutine ? (
+                        <>
+                          <Loader2 size={16} className="animate-spin" /> Saving Routine…
+                        </>
+                      ) : (
+                        'Save & Replace Routine'
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col">
+                <div className="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
+                      <Clock size={20} className="text-indigo-600" /> Active Schedule
+                    </h3>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
+                      Currently visible class routine to all students
+                    </p>
+                  </div>
+                  {existingRoutine.length > 0 && (
+                    <button
+                      onClick={handleDeleteRoutine}
+                      disabled={isSavingRoutine}
+                      className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all font-black text-[9px] uppercase tracking-widest flex items-center gap-1.5 active:scale-95 border border-rose-100 dark:border-rose-900/40 cursor-pointer"
+                    >
+                      <Trash2 size={12} /> Clear All
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex-1 p-6 overflow-y-auto max-h-[600px] custom-scrollbar">
+                  {isFetchingRoutine ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
+                      <Loader2 size={32} className="animate-spin text-indigo-600" />
+                      <span className="font-bold text-xs uppercase tracking-widest">Loading Routine…</span>
+                    </div>
+                  ) : existingRoutine.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center gap-4">
+                      <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800/40 rounded-full flex items-center justify-center border border-slate-100 dark:border-slate-800/80">
+                        <Clock size={24} className="text-slate-400" />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-black text-slate-800 dark:text-slate-200 text-sm uppercase tracking-wider">No Routine Loaded</h4>
+                        <p className="text-xs text-slate-400 font-medium max-w-[280px]">
+                          Use the AI Importer on the left to copy-paste the parsed JSON routine to initialize it.
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-6">
+                      {["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => {
+                        const dayClasses = existingRoutine
+                          .filter((c) => c.day === day)
+                          .sort((a, b) => a.start_time.localeCompare(b.start_time));
+                        if (dayClasses.length === 0) return null;
+                        return (
+                          <div key={day} className="space-y-3">
+                            <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                              {day}
+                            </h4>
+                            <div className="grid grid-cols-1 gap-2.5">
+                              {dayClasses.map((item) => (
+                                <div
+                                  key={item.id}
+                                  className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 rounded-xl hover:scale-[1.01] transition-all flex justify-between items-center"
+                                >
+                                  <div className="space-y-1">
+                                    <h5 className="font-black text-slate-900 dark:text-white text-xs leading-none">
+                                      {item.course_name}
+                                    </h5>
+                                    <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
+                                      <span>{item.course_code}</span>
+                                      {item.sub_section && (
+                                        <>
+                                          <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                          <span>Sec {item.sub_section}</span>
+                                        </>
+                                      )}
+                                      {item.teacher && (
+                                        <>
+                                          <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                          <span>{item.teacher}</span>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <div className="text-xs font-black text-slate-800 dark:text-slate-200">
+                                      {item.start_time} - {item.end_time}
+                                    </div>
+                                    {item.room && (
+                                      <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-wider">
+                                        Room {item.room}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         )}
