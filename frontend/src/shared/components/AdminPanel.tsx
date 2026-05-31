@@ -86,6 +86,9 @@ const AdminPanel: React.FC<Props> = ({ courses, records, notices, deadlines, sec
   const [isSavingRoutine, setIsSavingRoutine] = useState(false);
   const [existingRoutine, setExistingRoutine] = useState<RoutineItem[]>([]);
   const [copiedPrompt, setCopiedPrompt] = useState(false);
+  const [routineSubTab, setRoutineSubTab] = useState<'schedule' | 'ai' | 'manual'>('schedule');
+  const [manualEntry, setManualEntry] = useState({ day: 'Saturday', course_code: '', course_name: '', teacher: '', room: '', start_time: '08:30', end_time: '11:30', sub_section: '' });
+  const [editingRoutineItemId, setEditingRoutineItemId] = useState<string | null>(null);
 
   const aiPrompt = `Identify all class timings, course codes, course titles, teacher initials, and room numbers for our specific section.
 Convert them into a JSON array of class schedule objects.
@@ -221,6 +224,84 @@ No markdown wrapping (like \`\`\`json), no conversation, no explanation. Just ra
     } finally {
       setIsSavingRoutine(false);
     }
+  };
+
+  const handleDeleteSingleRoutineItem = async (itemId: string) => {
+    if (!await dialog.confirm('Remove this class from the routine?', 'Delete Class')) return;
+    setIsSavingRoutine(true);
+    try {
+      const remaining = existingRoutine.filter(r => r.id !== itemId);
+      const stripped = remaining.map(({ id, batch_id, section, created_at, ...rest }) => rest);
+      if (stripped.length > 0) {
+        const res = await routineService.saveRoutine(batchId, section, stripped);
+        setExistingRoutine(res);
+      } else {
+        await routineService.deleteRoutine(batchId, section);
+        setExistingRoutine([]);
+      }
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 3000);
+    } catch (e: any) {
+      console.error(e);
+      alert('Failed to delete item: ' + e.message);
+    } finally {
+      setIsSavingRoutine(false);
+    }
+  };
+
+  const handleManualAddRoutine = async () => {
+    if (!manualEntry.course_code.trim() || !manualEntry.course_name.trim()) {
+      alert('Please fill in Course Code and Course Name.');
+      return;
+    }
+    setIsSavingRoutine(true);
+    try {
+      const newItem = {
+        day: manualEntry.day,
+        course_code: manualEntry.course_code.trim(),
+        course_name: manualEntry.course_name.trim(),
+        teacher: manualEntry.teacher.trim() || undefined,
+        room: manualEntry.room.trim() || undefined,
+        start_time: manualEntry.start_time,
+        end_time: manualEntry.end_time,
+        sub_section: manualEntry.sub_section.trim() || undefined,
+      };
+      const currentStripped = existingRoutine.map(({ id, batch_id, section, created_at, ...rest }) => rest);
+
+      if (editingRoutineItemId) {
+        const idx = existingRoutine.findIndex(r => r.id === editingRoutineItemId);
+        if (idx !== -1) currentStripped[idx] = newItem;
+        setEditingRoutineItemId(null);
+      } else {
+        currentStripped.push(newItem);
+      }
+
+      const res = await routineService.saveRoutine(batchId, section, currentStripped);
+      setExistingRoutine(res);
+      setManualEntry({ day: 'Saturday', course_code: '', course_name: '', teacher: '', room: '', start_time: '08:30', end_time: '11:30', sub_section: '' });
+      setIsSuccess(true);
+      setTimeout(() => setIsSuccess(false), 3000);
+    } catch (e: any) {
+      console.error(e);
+      alert('Failed to add class: ' + e.message);
+    } finally {
+      setIsSavingRoutine(false);
+    }
+  };
+
+  const handleEditRoutineItem = (item: RoutineItem) => {
+    setManualEntry({
+      day: item.day,
+      course_code: item.course_code,
+      course_name: item.course_name,
+      teacher: item.teacher || '',
+      room: item.room || '',
+      start_time: item.start_time,
+      end_time: item.end_time,
+      sub_section: item.sub_section || '',
+    });
+    setEditingRoutineItemId(item.id);
+    setRoutineSubTab('manual');
   };
 
   const [profileName, setProfileName] = useState(profile?.full_name || '');
@@ -2343,135 +2424,55 @@ No markdown wrapping (like \`\`\`json), no conversation, no explanation. Just ra
         )}
 
         {activeTab === 'ROUTINE' && (
-          <div className="space-y-8">
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              <div className="bg-slate-50 dark:bg-slate-800/20 p-6 sm:p-8 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-6">
-                <div>
-                  <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
-                    <Bot size={18} className="text-indigo-600" /> AI Class Routine Importer
-                  </h3>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
-                    Generate routine data in seconds using artificial intelligence
-                  </p>
-                </div>
+          <div className="space-y-6">
+            <div className="flex gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-2xl border border-slate-200/50 dark:border-slate-700/50 overflow-x-auto no-scrollbar">
+              {[
+                { id: 'schedule' as const, label: 'Active Schedule', icon: <Clock size={15} /> },
+                { id: 'ai' as const, label: 'AI Importer', icon: <Bot size={15} /> },
+                { id: 'manual' as const, label: 'Manual Add/Edit', icon: <Edit2 size={15} /> },
+              ].map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setRoutineSubTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer whitespace-nowrap flex-1 justify-center ${
+                    routineSubTab === tab.id
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-lg'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                  }`}
+                >
+                  {tab.icon} <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.id === 'schedule' ? 'Schedule' : tab.id === 'ai' ? 'AI' : 'Manual'}</span>
+                </button>
+              ))}
+            </div>
 
-                <div className="bg-slate-100/50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-200/50 dark:border-slate-800 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[9px] font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-wider">AI Prompt Helper</span>
-                    <button
-                      onClick={handleCopyPrompt}
-                      className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[9px] font-black uppercase tracking-wider hover:bg-indigo-50 dark:hover:bg-slate-700/80 hover:text-indigo-600 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer animate-pulse"
-                    >
-                      <Save size={10} />
-                      {copiedPrompt ? 'Copied!' : 'Copy Prompt'}
-                    </button>
-                  </div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-h-24 overflow-y-auto custom-scrollbar bg-white/40 dark:bg-black/10 p-3 rounded-lg border border-slate-200/20 dark:border-slate-800/40 select-all">
-                    {aiPrompt}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">
-                    Paste AI JSON Output
-                  </label>
-                  <textarea
-                    rows={8}
-                    placeholder="[&#10;  {&#10;    &quot;day&quot;: &quot;Saturday&quot;,&#10;    &quot;course_code&quot;: &quot;CSE212&quot;,&#10;    &quot;course_name&quot;: &quot;Discrete Mathematics&quot;,&#10;    &quot;teacher&quot;: &quot;RKR&quot;,&#10;    &quot;room&quot;: &quot;KT-518&quot;,&#10;    &quot;start_time&quot;: &quot;11:30&quot;,&#10;    &quot;end_time&quot;: &quot;13:00&quot;&#10;  }&#10;]"
-                    value={routineInput}
-                    onChange={(e) => setRoutineInput(e.target.value)}
-                    className="w-full px-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 font-mono text-xs dark:text-white transition-colors"
-                  />
-                </div>
-
-                {routinePreviewError && (
-                  <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/40 rounded-xl flex items-start gap-3">
-                    <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={16} />
-                    <div>
-                      <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest">Syntax / Validation Error</p>
-                      <p className="text-xs text-rose-700 dark:text-rose-400 font-bold mt-1 leading-normal">{routinePreviewError}</p>
-                    </div>
-                  </div>
-                )}
-
-                {routineClasses.length > 0 && !routinePreviewError && (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 rounded-xl flex items-start gap-3">
-                      <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={16} />
-                      <div>
-                        <p className="text-[9px] font-black text-emerald-500 uppercase tracking-widest">Valid JSON Format</p>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-400 font-bold mt-1 leading-normal">
-                          Parsed {routineClasses.length} class schedule items. Ready to import.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden max-h-48 overflow-y-auto custom-scrollbar bg-white dark:bg-slate-900/20">
-                      <table className="w-full text-left text-xs border-collapse">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 sticky top-0 border-b border-slate-100 dark:border-slate-800">
-                          <tr>
-                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Day</th>
-                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Time</th>
-                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Code</th>
-                            <th className="p-2.5 font-black uppercase text-[8px] text-slate-400 tracking-wider">Room/Tchr</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          {routineClasses.map((item, idx) => (
-                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/10">
-                              <td className="p-2.5 font-bold text-slate-700 dark:text-slate-300">{item.day.substring(0, 3)}</td>
-                              <td className="p-2.5 font-medium text-slate-600 dark:text-slate-400">{item.start_time}-{item.end_time}</td>
-                              <td className="p-2.5 font-bold text-slate-800 dark:text-slate-200">{item.course_code} {item.sub_section ? `(${item.sub_section})` : ''}</td>
-                              <td className="p-2.5 font-medium text-slate-600 dark:text-slate-400">{item.room || '-'}/{item.teacher || '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    <button
-                      onClick={handleSaveRoutine}
-                      disabled={isSavingRoutine}
-                      className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-500/50 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-xl shadow-indigo-600/20 flex items-center justify-center gap-2 active:scale-98 cursor-pointer"
-                    >
-                      {isSavingRoutine ? (
-                        <>
-                          <Loader2 size={16} className="animate-spin" /> Saving Routine…
-                        </>
-                      ) : (
-                        'Save & Replace Routine'
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col">
-                <div className="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+            {routineSubTab === 'schedule' && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                <div className="p-5 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                   <div>
-                    <h3 className="text-xl font-black text-slate-800 dark:text-white flex items-center gap-2">
-                      <Clock size={20} className="text-indigo-600" /> Active Schedule
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <Clock size={18} className="text-indigo-600" /> Active Schedule
                     </h3>
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-                      Currently visible class routine to all students
+                    <p className="text-xs font-medium text-slate-400 mt-0.5">
+                      Currently visible to all students · {existingRoutine.length} classes
                     </p>
                   </div>
                   {existingRoutine.length > 0 && (
                     <button
                       onClick={handleDeleteRoutine}
                       disabled={isSavingRoutine}
-                      className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all font-black text-[9px] uppercase tracking-widest flex items-center gap-1.5 active:scale-95 border border-rose-100 dark:border-rose-900/40 cursor-pointer"
+                      className="px-3 py-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 rounded-xl transition-all text-xs font-bold flex items-center gap-1.5 active:scale-95 border border-rose-100 dark:border-rose-900/40 cursor-pointer"
                     >
-                      <Trash2 size={12} /> Clear All
+                      <Trash2 size={13} /> Clear All
                     </button>
                   )}
                 </div>
 
-                <div className="flex-1 p-6 overflow-y-auto max-h-[600px] custom-scrollbar">
+                <div className="p-5 sm:p-6 overflow-y-auto max-h-[650px] custom-scrollbar">
                   {isFetchingRoutine ? (
                     <div className="flex flex-col items-center justify-center py-20 text-slate-400 gap-3">
                       <Loader2 size={32} className="animate-spin text-indigo-600" />
-                      <span className="font-bold text-xs uppercase tracking-widest">Loading Routine…</span>
+                      <span className="font-bold text-xs">Loading Routine…</span>
                     </div>
                   ) : existingRoutine.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-slate-400 text-center gap-4">
@@ -2479,60 +2480,71 @@ No markdown wrapping (like \`\`\`json), no conversation, no explanation. Just ra
                         <Clock size={24} className="text-slate-400" />
                       </div>
                       <div className="space-y-1">
-                        <h4 className="font-black text-slate-800 dark:text-slate-200 text-sm uppercase tracking-wider">No Routine Loaded</h4>
-                        <p className="text-xs text-slate-400 font-medium max-w-[280px]">
-                          Use the AI Importer on the left to copy-paste the parsed JSON routine to initialize it.
+                        <h4 className="font-bold text-slate-800 dark:text-slate-200 text-base">No Routine Yet</h4>
+                        <p className="text-sm text-slate-400 font-medium max-w-[300px]">
+                          Use the AI Importer tab to bulk-import or the Manual tab to add individual classes.
                         </p>
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-6">
+                    <div className="space-y-5">
                       {["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => {
                         const dayClasses = existingRoutine
                           .filter((c) => c.day === day)
                           .sort((a, b) => a.start_time.localeCompare(b.start_time));
                         if (dayClasses.length === 0) return null;
                         return (
-                          <div key={day} className="space-y-3">
-                            <h4 className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] px-2 flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
-                              {day}
-                            </h4>
-                            <div className="grid grid-cols-1 gap-2.5">
+                          <div key={day}>
+                            <div className="flex items-center gap-2 mb-2.5 px-1">
+                              <span className="w-2 h-2 rounded-full bg-gradient-to-r from-indigo-500 to-violet-500" />
+                              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">{day}</h4>
+                              <span className="text-[10px] text-slate-400 font-medium">({dayClasses.length})</span>
+                            </div>
+                            <div className="space-y-2">
                               {dayClasses.map((item) => (
                                 <div
                                   key={item.id}
-                                  className="p-4 bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800/80 rounded-xl hover:scale-[1.01] transition-all flex justify-between items-center"
+                                  className="p-3.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800/60 rounded-xl flex justify-between items-center gap-3 group hover:bg-slate-100/50 dark:hover:bg-slate-800/50 transition-colors"
                                 >
-                                  <div className="space-y-1">
-                                    <h5 className="font-black text-slate-900 dark:text-white text-xs leading-none">
+                                  <div className="space-y-1 min-w-0 flex-1">
+                                    <h5 className="font-bold text-slate-900 dark:text-white text-sm leading-tight truncate">
                                       {item.course_name}
                                     </h5>
-                                    <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">
-                                      <span>{item.course_code}</span>
+                                    <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                                      <span className="font-semibold">{item.course_code}</span>
                                       {item.sub_section && (
                                         <>
-                                          <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                          <span>Sec {item.sub_section}</span>
+                                          <span className="w-0.5 h-0.5 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                          <span>{item.sub_section}</span>
                                         </>
                                       )}
                                       {item.teacher && (
                                         <>
-                                          <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
+                                          <span className="w-0.5 h-0.5 rounded-full bg-slate-300 dark:bg-slate-600" />
                                           <span>{item.teacher}</span>
                                         </>
                                       )}
                                     </div>
                                   </div>
-                                  <div className="text-right shrink-0">
-                                    <div className="text-xs font-black text-slate-800 dark:text-slate-200">
-                                      {item.start_time} - {item.end_time}
-                                    </div>
-                                    {item.room && (
-                                      <div className="text-[10px] font-bold text-slate-400 uppercase mt-0.5 tracking-wider">
-                                        Room {item.room}
+                                  <div className="flex items-center gap-2 shrink-0">
+                                    <div className="text-right">
+                                      <div className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        {item.start_time} – {item.end_time}
                                       </div>
-                                    )}
+                                      {item.room && (
+                                        <div className="text-[10px] font-medium text-slate-400 mt-0.5">
+                                          {item.room}
+                                        </div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <button onClick={() => handleEditRoutineItem(item)} className="w-7 h-7 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-500 hover:text-indigo-600 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer">
+                                        <Edit2 size={12} />
+                                      </button>
+                                      <button onClick={() => handleDeleteSingleRoutineItem(item.id)} className="w-7 h-7 flex items-center justify-center bg-white dark:bg-slate-800 text-slate-500 hover:text-rose-500 border border-slate-200 dark:border-slate-700 rounded-lg transition-colors cursor-pointer">
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
                                   </div>
                                 </div>
                               ))}
@@ -2544,7 +2556,224 @@ No markdown wrapping (like \`\`\`json), no conversation, no explanation. Just ra
                   )}
                 </div>
               </div>
-            </div>
+            )}
+
+            {routineSubTab === 'ai' && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 space-y-5">
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                    <Bot size={18} className="text-indigo-600" /> AI Class Routine Importer
+                  </h3>
+                  <p className="text-xs font-medium text-slate-400 mt-0.5">
+                    Upload routine images to AI, paste the JSON output below
+                  </p>
+                </div>
+
+                <div className="bg-slate-50 dark:bg-slate-800/30 p-4 rounded-xl border border-slate-100 dark:border-slate-800 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400">AI Prompt</span>
+                    <button
+                      onClick={handleCopyPrompt}
+                      className="px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-bold hover:bg-indigo-50 dark:hover:bg-slate-700/80 hover:text-indigo-600 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                    >
+                      <Save size={12} />
+                      {copiedPrompt ? 'Copied!' : 'Copy Prompt'}
+                    </button>
+                  </div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-h-28 overflow-y-auto custom-scrollbar bg-white/60 dark:bg-black/10 p-3 rounded-lg border border-slate-200/30 dark:border-slate-800/40 select-all">
+                    {aiPrompt}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-500 px-1">
+                    Paste AI JSON Output
+                  </label>
+                  <textarea
+                    rows={8}
+                    placeholder={'[\n  {\n    "day": "Saturday",\n    "course_code": "CSE212",\n    "course_name": "Discrete Mathematics",\n    "teacher": "RKR",\n    "room": "KT-518",\n    "start_time": "11:30",\n    "end_time": "13:00"\n  }\n]'}
+                    value={routineInput}
+                    onChange={(e) => setRoutineInput(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/10 font-mono text-sm dark:text-white transition-all"
+                  />
+                </div>
+
+                {routinePreviewError && (
+                  <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/50 dark:border-rose-900/40 rounded-xl flex items-start gap-3">
+                    <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={16} />
+                    <div>
+                      <p className="text-xs font-bold text-rose-500">Validation Error</p>
+                      <p className="text-sm text-rose-700 dark:text-rose-400 font-medium mt-1 leading-normal">{routinePreviewError}</p>
+                    </div>
+                  </div>
+                )}
+
+                {routineClasses.length > 0 && !routinePreviewError && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200/50 dark:border-emerald-900/40 rounded-xl flex items-start gap-3">
+                      <CheckCircle2 className="text-emerald-500 shrink-0 mt-0.5" size={16} />
+                      <div>
+                        <p className="text-xs font-bold text-emerald-600">Valid JSON</p>
+                        <p className="text-sm text-emerald-700 dark:text-emerald-400 font-medium mt-0.5">
+                          {routineClasses.length} classes parsed. Ready to import.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden max-h-52 overflow-y-auto custom-scrollbar">
+                      <table className="w-full text-left text-sm border-collapse">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 sticky top-0 border-b border-slate-100 dark:border-slate-800">
+                          <tr>
+                            <th className="p-2.5 font-bold text-xs text-slate-400">Day</th>
+                            <th className="p-2.5 font-bold text-xs text-slate-400">Time</th>
+                            <th className="p-2.5 font-bold text-xs text-slate-400">Course</th>
+                            <th className="p-2.5 font-bold text-xs text-slate-400 hidden sm:table-cell">Info</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {routineClasses.map((item, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+                              <td className="p-2.5 font-semibold text-slate-700 dark:text-slate-300">{item.day.substring(0, 3)}</td>
+                              <td className="p-2.5 text-slate-600 dark:text-slate-400">{item.start_time}–{item.end_time}</td>
+                              <td className="p-2.5 font-semibold text-slate-800 dark:text-slate-200">{item.course_code}{item.sub_section ? ` (${item.sub_section})` : ''}</td>
+                              <td className="p-2.5 text-slate-500 dark:text-slate-400 hidden sm:table-cell">{item.room || '–'} / {item.teacher || '–'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <button
+                      onClick={handleSaveRoutine}
+                      disabled={isSavingRoutine}
+                      className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-indigo-600/15 flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
+                    >
+                      {isSavingRoutine ? (
+                        <><Loader2 size={16} className="animate-spin" /> Saving…</>
+                      ) : (
+                        <><Upload size={16} /> Import & Replace Routine</>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {routineSubTab === 'manual' && (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 space-y-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                      <Edit2 size={18} className="text-indigo-600" /> {editingRoutineItemId ? 'Edit Class Entry' : 'Add Class Entry'}
+                    </h3>
+                    <p className="text-xs font-medium text-slate-400 mt-0.5">
+                      Manually add or edit individual class schedule entries
+                    </p>
+                  </div>
+                  {editingRoutineItemId && (
+                    <button
+                      onClick={() => { setEditingRoutineItemId(null); setManualEntry({ day: 'Saturday', course_code: '', course_name: '', teacher: '', room: '', start_time: '08:30', end_time: '11:30', sub_section: '' }); }}
+                      className="px-3 py-2 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <X size={14} /> Cancel Edit
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">Day</label>
+                    <select value={manualEntry.day} onChange={e => setManualEntry(p => ({ ...p, day: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500 cursor-pointer">
+                      {["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map(d => <option key={d} value={d}>{d}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">Course Code *</label>
+                    <input type="text" placeholder="CSE212" value={manualEntry.course_code} onChange={e => setManualEntry(p => ({ ...p, course_code: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500" />
+                  </div>
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">Course Name *</label>
+                    <input type="text" placeholder="Discrete Mathematics" value={manualEntry.course_name} onChange={e => setManualEntry(p => ({ ...p, course_name: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">Teacher</label>
+                    <input type="text" placeholder="RKR" value={manualEntry.teacher} onChange={e => setManualEntry(p => ({ ...p, teacher: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">Room</label>
+                    <input type="text" placeholder="KT-518" value={manualEntry.room} onChange={e => setManualEntry(p => ({ ...p, room: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">Start Time</label>
+                    <input type="time" value={manualEntry.start_time} onChange={e => setManualEntry(p => ({ ...p, start_time: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">End Time</label>
+                    <input type="time" value={manualEntry.end_time} onChange={e => setManualEntry(p => ({ ...p, end_time: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-500 px-1">Sub-Section</label>
+                    <input type="text" placeholder="J1 (optional)" value={manualEntry.sub_section} onChange={e => setManualEntry(p => ({ ...p, sub_section: e.target.value }))} className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-800 rounded-xl text-sm font-medium dark:text-white outline-none focus:border-indigo-500" />
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleManualAddRoutine}
+                  disabled={isSavingRoutine}
+                  className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 disabled:opacity-50 text-white rounded-2xl font-bold text-sm transition-all shadow-xl shadow-indigo-600/15 flex items-center justify-center gap-2 active:scale-[0.98] cursor-pointer"
+                >
+                  {isSavingRoutine ? (
+                    <><Loader2 size={16} className="animate-spin" /> Saving…</>
+                  ) : editingRoutineItemId ? (
+                    <><Save size={16} /> Update Class Entry</>
+                  ) : (
+                    <><PlusCircle size={16} /> Add Class Entry</>
+                  )}
+                </button>
+
+                {existingRoutine.length > 0 && (
+                  <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <h4 className="text-sm font-bold text-slate-600 dark:text-slate-300 mb-3">Current Entries ({existingRoutine.length})</h4>
+                    <div className="space-y-1.5 max-h-[300px] overflow-y-auto custom-scrollbar">
+                      {existingRoutine
+                        .slice()
+                        .sort((a, b) => {
+                          const dayOrder = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+                          const dayDiff = dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
+                          return dayDiff !== 0 ? dayDiff : a.start_time.localeCompare(b.start_time);
+                        })
+                        .map(item => (
+                          <div key={item.id} className={`p-3 rounded-xl flex justify-between items-center gap-2 text-sm transition-colors ${
+                            editingRoutineItemId === item.id
+                              ? 'bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800/40'
+                              : 'bg-slate-50 dark:bg-slate-800/20 border border-slate-100 dark:border-slate-800/40 hover:bg-slate-100/50 dark:hover:bg-slate-800/40'
+                          }`}>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase w-7 shrink-0">{item.day.substring(0, 3)}</span>
+                                <span className="font-semibold text-slate-800 dark:text-slate-200 truncate">{item.course_name}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium pl-9">
+                                <span>{item.start_time}–{item.end_time}</span>
+                                <span>{item.course_code}</span>
+                                {item.room && <span>· {item.room}</span>}
+                              </div>
+                            </div>
+                            <div className="flex gap-1 shrink-0">
+                              <button onClick={() => handleEditRoutineItem(item)} className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                                <Edit2 size={13} />
+                              </button>
+                              <button onClick={() => handleDeleteSingleRoutineItem(item.id)} className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-500 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition-colors cursor-pointer">
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
 
