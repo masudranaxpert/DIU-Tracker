@@ -23,6 +23,8 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
     const [isLoading, setIsLoading] = useState(false);
     const { locked: isLocked, verifying: isVerifying } = useSectionAccess(batchId, section);
 
+    const courseIds = courses.map(c => c.id).join(',');
+
     const loadAllGroups = useCallback(async () => {
         setIsLoading(true);
         try {
@@ -37,11 +39,14 @@ const GroupRegisterView: React.FC<Props> = ({ courses, section, batchId, userSub
         } finally {
             setIsLoading(false);
         }
-    }, [batchId, section, courses]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [batchId, section, courseIds]);
 
     useEffect(() => {
-        loadAllGroups();
-    }, [section, batchId, loadAllGroups]);
+        if (!isLocked && !isVerifying) {
+            loadAllGroups();
+        }
+    }, [section, batchId, isLocked, isVerifying, loadAllGroups]);
 
     const currentGroups = allGroupsData.get(selectedCourseId) || [];
     const activeCourse = courses.find(c => c.id === selectedCourseId);
