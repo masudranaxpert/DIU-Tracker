@@ -348,6 +348,10 @@ const MainDashboard: React.FC<Props> = ({
         }
     }, [location.pathname, activeTab]);
 
+    useEffect(() => {
+        setIsMobileSidebarOpen(false);
+    }, [location.pathname]);
+
     const handleAction = useCallback((type: 'record' | 'notice', id: string) => {
         const basePath = '/dashboard';
         navigate(`${basePath}/${type}/${id}`);
@@ -363,7 +367,8 @@ const MainDashboard: React.FC<Props> = ({
         setIsNotificationsOpen(false);
         setIsBatchSwitcherOpen(false);
         setIsSectionSwitcherOpen(false);
-    }, [navigate, tab, subId]);
+        setIsMobileSidebarOpen(false);
+    }, [navigate, tab, subId, setIsMobileSidebarOpen]);
 
     const handleBatchChange = useCallback((batchId: string) => {
         console.log('[MainDashboard] handleBatchChange invoked for:', batchId);
