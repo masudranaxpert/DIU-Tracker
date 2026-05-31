@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isToday, isFuture, parseISO, addDays, isWithinInterval } from 'date-fns';
@@ -29,8 +29,13 @@ import {
     UserSquare2,
     PanelLeftClose,
     PanelLeft,
-    GraduationCap
+    GraduationCap,
+    Wrench
 } from 'lucide-react';
+import { isNativeApp } from '@/shared/lib/nativeApp';
+
+const ToolsView = lazy(() => import('./tools/ToolsView'));
+const CoverPageView = lazy(() => import('./cover/CoverPageView'));
 import { Section, AcademicRecord, Theme, AppNotification, Course, Batch, Notice, Deadline } from '@/shared/types/types';
 import Dashboard from './Dashboard';
 import CalendarView from './CalendarView';
@@ -164,7 +169,9 @@ const MainDashboard: React.FC<Props> = ({
             feedback: "User Feedback",
             academic_year: "Academic Year View",
             admin: "CR Admin Panel",
-            student_profiles: "Student Directory"
+            student_profiles: "Student Directory",
+            tools: "PDF Tools",
+            cover: "Cover Page"
         };
 
         const pageTitle = tabTitles[activeTab] || "Student Platform";
@@ -196,6 +203,17 @@ const MainDashboard: React.FC<Props> = ({
     const [runTutorial, setRunTutorial] = useState(false);
     const [isAutoTour, setIsAutoTour] = useState(false);
     const [showTutorialPrompt, setShowTutorialPrompt] = useState(false);
+    const [isKeyboardOpen, setIsKeyboardOpen] = useState(false);
+
+    useEffect(() => {
+        const initialHeight = window.innerHeight;
+        const THRESHOLD = 150;
+        const check = () => {
+            setIsKeyboardOpen(window.innerHeight < initialHeight - THRESHOLD);
+        };
+        window.addEventListener('resize', check);
+        return () => window.removeEventListener('resize', check);
+    }, []);
 
     const tourSequence = ['dashboard', 'calendar', 'courses', 'groups', 'question_bank', 'academic_year', 'notices'];
 
@@ -356,40 +374,49 @@ const MainDashboard: React.FC<Props> = ({
         setIsBatchSwitcherOpen(false);
     }, [batches, onBatchChange]);
 
-    const navGroups = useMemo(() => [
-        {
-            title: 'General',
-            items: [
-                { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Overview', color: 'text-indigo-500', activeBg: 'bg-indigo-600' },
-                { id: 'calendar', icon: <CalendarIcon size={20} />, label: 'Calendar View', color: 'text-indigo-500', activeBg: 'bg-indigo-600' },
-            ]
-        },
-        {
-            title: 'Academic',
-            items: [
-                { id: 'courses', icon: <BookMarked size={20} />, label: 'Course View', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
-                { id: 'groups', icon: <Users size={20} />, label: 'Group List', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
-                { id: 'question_bank', icon: <FileQuestion size={20} />, label: 'QuestionBank', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
-            ]
-        },
-        {
-            title: 'Officials',
-            items: [
-                { id: 'cr_profiles', icon: <UserCheck size={20} />, label: 'CR Profiles', color: 'text-violet-500', activeBg: 'bg-indigo-600' },
-                // Only show student profiles to logged in users
-                ...(userProfile ? [{ id: 'student_profiles', icon: <GraduationCap size={20} />, label: 'Student Profiles', color: 'text-violet-500', activeBg: 'bg-indigo-600' }] : []),
-                { id: 'academic_year', icon: <CalendarIcon size={20} />, label: 'Academic Calendar', color: 'text-violet-500', activeBg: 'bg-indigo-600' },
-            ]
-        },
-        {
-            title: 'Announcements',
-            items: [
-                { id: 'notices', icon: <Bell size={20} />, label: 'Announcement', color: 'text-amber-500', activeBg: 'bg-amber-600' },
-                { id: 'feedback', icon: <MessageSquare size={20} />, label: 'Feedback', color: 'text-amber-500', activeBg: 'bg-amber-600' },
-            ]
-        }
-
-    ], []);
+    const navGroups = useMemo(() => {
+        const groups = [
+            {
+                title: 'General',
+                items: [
+                    { id: 'dashboard', icon: <LayoutDashboard size={20} />, label: 'Overview', color: 'text-indigo-500', activeBg: 'bg-indigo-600' },
+                    { id: 'calendar', icon: <CalendarIcon size={20} />, label: 'Calendar View', color: 'text-indigo-500', activeBg: 'bg-indigo-600' },
+                ]
+            },
+            {
+                title: 'Tools',
+                items: [
+                    ...(isNativeApp() ? [{ id: 'tools', icon: <Wrench size={20} />, label: 'PDF Tools', color: 'text-sky-500', activeBg: 'bg-sky-600' }] : []),
+                    { id: 'cover', icon: <GraduationCap size={20} />, label: 'Cover Page', color: 'text-violet-500', activeBg: 'bg-violet-600' },
+                ]
+            },
+            {
+                title: 'Academic',
+                items: [
+                    { id: 'courses', icon: <BookMarked size={20} />, label: 'Course View', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
+                    { id: 'groups', icon: <Users size={20} />, label: 'Group List', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
+                    { id: 'question_bank', icon: <FileQuestion size={20} />, label: 'QuestionBank', color: 'text-emerald-500', activeBg: 'bg-emerald-600' },
+                ]
+            },
+            {
+                title: 'Officials',
+                items: [
+                    { id: 'cr_profiles', icon: <UserCheck size={20} />, label: 'CR Profiles', color: 'text-violet-500', activeBg: 'bg-indigo-600' },
+                    // Only show student profiles to logged in users
+                    ...(userProfile ? [{ id: 'student_profiles', icon: <GraduationCap size={20} />, label: 'Student Profiles', color: 'text-violet-500', activeBg: 'bg-indigo-600' }] : []),
+                    { id: 'academic_year', icon: <CalendarIcon size={20} />, label: 'Academic Calendar', color: 'text-violet-500', activeBg: 'bg-indigo-600' },
+                ]
+            },
+            {
+                title: 'Announcements',
+                items: [
+                    { id: 'notices', icon: <Bell size={20} />, label: 'Announcement', color: 'text-amber-500', activeBg: 'bg-amber-600' },
+                    { id: 'feedback', icon: <MessageSquare size={20} />, label: 'Feedback', color: 'text-amber-500', activeBg: 'bg-amber-600' },
+                ]
+            }
+        ];
+        return groups;
+    }, []);
 
     // Flat version for mobile nav and lookups
     const navItems = useMemo(() => navGroups.flatMap(g => g.items), [navGroups]);
@@ -651,7 +678,7 @@ const MainDashboard: React.FC<Props> = ({
             </aside>
 
             {/* Main Surface */}
-            <div className="flex-1 flex flex-col min-w-0 h-screen h-[100dvh] overflow-y-auto no-scrollbar pb-32 lg:pb-0 relative">
+            <div className="flex-1 flex flex-col min-w-0 h-screen h-[100dvh] overflow-y-auto overflow-x-hidden no-scrollbar pb-32 lg:pb-0 relative">
                 <header className="px-4 lg:px-8 pb-4 lg:pb-6 pt-[calc(1rem+env(safe-area-inset-top))] lg:pt-[calc(1.5rem+env(safe-area-inset-top))] flex items-center justify-between glass sticky top-0 z-50 border-b border-slate-200/50 dark:border-slate-800/50 bg-white/90 dark:bg-slate-900/90">
                     <div className="flex items-center gap-3">
                         {/* Profile Picture / Menu Trigger */}
@@ -948,6 +975,31 @@ const MainDashboard: React.FC<Props> = ({
                             )}
                             {activeTab === 'groups' && <GroupRegisterView courses={courses} section={selectedSection} userSubSection={selectedSubSection || undefined} batchId={selectedBatch!} />}
                             {activeTab === 'question_bank' && <QuestionBankView />}
+                            {activeTab === 'tools' && (
+                                <Suspense fallback={
+                                    <div className="flex items-center justify-center min-h-[40vh] text-slate-400 text-sm font-bold">
+                                        Loading PDF tools…
+                                    </div>
+                                }>
+                                    <ToolsView />
+                                </Suspense>
+                            )}
+                            {activeTab === 'cover' && (
+                                <Suspense fallback={
+                                    <div className="flex items-center justify-center min-h-[40vh] text-slate-400 text-sm font-bold">
+                                        Loading cover page…
+                                    </div>
+                                }>
+                                    <CoverPageView
+                                        courses={courses}
+                                        autofill={{
+                                            name: userProfile?.full_name,
+                                            studentId: userProfile?.student_id,
+                                            section: selectedSection || undefined,
+                                        }}
+                                    />
+                                </Suspense>
+                            )}
                             {activeTab === 'cr_profiles' && (
                                 <CRProfilesView
                                     batchId={selectedBatch!}
@@ -1142,8 +1194,8 @@ const MainDashboard: React.FC<Props> = ({
                 </main>
             </div>
 
-            <nav className="lg:hidden fixed bottom-6 left-6 right-6 z-[100] bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-[2rem] p-2 flex items-center justify-between shadow-2xl shadow-slate-900/10">
-                {navItems.filter(item => item.id !== 'academic_year' && item.id !== 'groups' && item.id !== 'cr_profiles' && item.id !== 'feedback' && item.id !== 'teacher_profiles' && item.id !== 'student_profiles').map(item => (
+            <nav className={`lg:hidden fixed bottom-6 left-6 right-6 z-[100] bg-white/90 dark:bg-[#0f172a]/90 backdrop-blur-xl border border-slate-200 dark:border-slate-800 rounded-[2rem] p-2 flex items-center justify-between shadow-2xl shadow-slate-900/10 transition-all duration-200 ${isKeyboardOpen ? 'translate-y-[200%] pointer-events-none opacity-0' : ''}`}>
+                {navItems.filter(item => item.id !== 'academic_year' && item.id !== 'groups' && item.id !== 'cr_profiles' && item.id !== 'feedback' && item.id !== 'teacher_profiles' && item.id !== 'student_profiles' && item.id !== 'tools' && item.id !== 'cover').map(item => (
                     <button
                         key={item.id}
                         onClick={() => handleTabChange(item.id as any)}

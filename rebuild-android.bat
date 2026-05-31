@@ -1,3 +1,2 @@
 @echo off
-cd /d "%~dp0frontend"
-call "%~dp0frontend\rebuild-android.bat" %*
+call "%~dp0frontend\scripts\rebuild-android.bat" %*

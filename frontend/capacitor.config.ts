@@ -6,7 +6,11 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   plugins: {
     PushNotifications: {
-      presentationOptions: ["badge", "sound", "alert"],
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    LocalNotifications: {
+      smallIcon: 'ic_stat_notify',
+      iconColor: '#4F46E5',
     },
   },
 };

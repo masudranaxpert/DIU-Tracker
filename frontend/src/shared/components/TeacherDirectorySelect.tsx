@@ -12,6 +12,7 @@ type TeacherRow = {
 type Props = {
   value: string;
   onChange: (name: string) => void;
+  onSelect?: (teacher: TeacherRow) => void;
   placeholder?: string;
   required?: boolean;
   allowCustom?: boolean;
@@ -19,9 +20,32 @@ type Props = {
 
 const API_BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
 
+function TeacherAvatar({ name, url }: { name: string; url?: string | null }) {
+  const [failed, setFailed] = useState(false);
+  const src = url ? resolveMediaUrl(url) : '';
+  if (!src || failed) {
+    return (
+      <div className="w-full h-full flex items-center justify-center text-slate-400 font-black">
+        {name?.charAt(0) || '?'}
+      </div>
+    );
+  }
+  return (
+    <img
+      src={src}
+      alt=""
+      loading="lazy"
+      referrerPolicy="no-referrer"
+      onError={() => setFailed(true)}
+      className="w-full h-full object-cover"
+    />
+  );
+}
+
 export default function TeacherDirectorySelect({
   value,
   onChange,
+  onSelect,
   placeholder = 'Search teacher name…',
   required = false,
   allowCustom = false,
@@ -101,19 +125,14 @@ export default function TeacherDirectorySelect({
                   }}
                   onClick={() => {
                     onChange(t.name);
+                    onSelect?.(t);
                     setQuery(t.name);
                     setOpen(false);
                   }}
                   className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl transition-all text-left"
                 >
                   <div className="w-10 h-10 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-700 flex-shrink-0">
-                    {t.avatar_url ? (
-                      <img src={resolveMediaUrl(t.avatar_url)} alt="" className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-slate-400 font-black">
-                        {t.name?.charAt(0) || '?'}
-                      </div>
-                    )}
+                    <TeacherAvatar name={t.name} url={t.avatar_url} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-black text-slate-800 dark:text-white truncate">{t.name}</p>
