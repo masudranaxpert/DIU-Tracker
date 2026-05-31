@@ -22,8 +22,6 @@ import {
 import { format } from 'date-fns';
 
 import { apiClient } from '@/shared/services/apiClient';
-import QbankPdfViewerModal from '@/shared/components/QbankPdfViewerModal';
-import { isNativeApp } from '@/shared/lib/nativeApp';
 
 type QbQuestion = {
   question_external_id: number;
@@ -220,7 +218,6 @@ const QuestionBankView: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [subs, setSubs] = useState<Record<number, SubmissionState>>({});
-  const [pdfPreview, setPdfPreview] = useState<{ url: string; title: string } | null>(null);
   const pollTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const activeCount = [department, course, semester, examType].filter(
@@ -573,26 +570,6 @@ const QuestionBankView: React.FC = () => {
                             const viewClassName =
                               'inline-flex items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-white px-2 py-1.5 text-[11px] font-black uppercase tracking-widest text-indigo-700 transition-colors hover:bg-indigo-600 hover:text-white dark:border-slate-700 dark:bg-slate-900 dark:text-indigo-300 dark:hover:bg-indigo-600 dark:hover:text-white cursor-pointer';
 
-                            if (isNativeApp()) {
-                              return (
-                                <button
-                                  key={submission.id}
-                                  type="button"
-                                  title={viewTitle}
-                                  onClick={() =>
-                                    setPdfPreview({
-                                      url: submission.pdf_url,
-                                      title: viewTitle,
-                                    })
-                                  }
-                                  className={viewClassName}
-                                >
-                                  <FileText size={13} />
-                                  {viewLabel}
-                                </button>
-                              );
-                            }
-
                             return (
                               <a
                                 key={submission.id}
@@ -646,14 +623,6 @@ const QuestionBankView: React.FC = () => {
         )}
       </div>
 
-      {isNativeApp() && (
-        <QbankPdfViewerModal
-          open={Boolean(pdfPreview)}
-          pdfUrl={pdfPreview?.url ?? ''}
-          title={pdfPreview?.title}
-          onClose={() => setPdfPreview(null)}
-        />
-      )}
     </div>
   );
 };
