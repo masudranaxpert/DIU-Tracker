@@ -96,6 +96,12 @@ export function getCoverKindInfo(kind: CoverKind): CoverKindInfo {
 }
 
 export function createEmptyCoverData(kind: CoverKind): CoverData {
+  const local = new Date();
+  const yyyy = local.getFullYear();
+  const mm = String(local.getMonth() + 1).padStart(2, '0');
+  const dd = String(local.getDate()).padStart(2, '0');
+  const localDateStr = `${yyyy}-${mm}-${dd}`;
+
   return {
     kind,
     courseCode: '',
@@ -104,8 +110,8 @@ export function createEmptyCoverData(kind: CoverKind): CoverData {
     workTitle: '',
     submittedTo: { name: '', designation: '', department: COVER_DEFAULTS.department },
     submittedBy: { name: '', studentId: '', section: '', semester: '', department: COVER_DEFAULTS.department },
-    dateOfSubmission: new Date().toISOString().slice(0, 10),
-    experiments: [{ no: '1', name: '', date: '', remarks: '' }],
+    dateOfSubmission: localDateStr,
+    experiments: [{ no: '1', name: '', date: localDateStr, remarks: '' }],
   };
 }
 

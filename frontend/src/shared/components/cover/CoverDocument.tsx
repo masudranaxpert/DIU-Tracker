@@ -22,14 +22,14 @@ interface CoverDocumentProps {
 }
 
 const LV: React.FC<{ label: string; value: string; boldValue?: boolean }> = ({ label, value, boldValue = false }) => (
-  <div style={{ fontSize: 17.5, lineHeight: 1.7, color: INK }}>
+  <div style={{ fontSize: 19.5, lineHeight: 1.7, color: INK }}>
     <span style={{ fontWeight: 700 }}>{label}:</span>{' '}
     <span style={{ fontWeight: boldValue ? 800 : 400 }}>{value || ''}</span>
   </div>
 );
 
 const Bold: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div style={{ fontSize: 17.5, lineHeight: 1.7, color: INK, fontWeight: 700 }}>{children}</div>
+  <div style={{ fontSize: 19.5, lineHeight: 1.7, color: INK, fontWeight: 700 }}>{children}</div>
 );
 
 const Heading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -37,11 +37,11 @@ const Heading: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     style={{
       textAlign: 'center',
       fontWeight: 800,
-      fontSize: 19,
+      fontSize: 21.5,
       color: INK,
       textDecoration: 'underline',
       textUnderlineOffset: 6,
-      marginBottom: 8,
+      marginBottom: 10,
     }}
   >
     {children}
@@ -86,7 +86,7 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
           position: 'relative',
           height: '100%',
           boxSizing: 'border-box',
-          padding: '48px 72px 30px',
+          padding: '54px 72px 80px',
           display: 'flex',
           flexDirection: 'column',
         }}
@@ -95,16 +95,16 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
           src={COVER_ASSETS.header}
           alt="Daffodil International University"
           crossOrigin="anonymous"
-          style={{ width: 500, display: 'block', margin: '0 auto' }}
+          style={{ width: 540, display: 'block', margin: '0 auto' }}
         />
 
         <div
           style={{
             textAlign: 'center',
             fontWeight: 800,
-            fontSize: 27,
+            fontSize: 31,
             color: INK,
-            marginTop: 26,
+            marginTop: 32,
             textDecoration: 'underline',
             textUnderlineOffset: 7,
             letterSpacing: 1,
@@ -113,7 +113,7 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
           {info.title}
         </div>
 
-        <div style={{ marginTop: 30 }}>
+        <div style={{ marginTop: 42 }}>
           <LV label="Course Code" value={data.courseCode} />
           <LV label="Course Title" value={data.courseTitle} />
           {info.workNoLabel && <LV label={info.workNoLabel} value={data.workNo} />}
@@ -145,7 +145,7 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
           </div>
         ) : (
           <>
-            <div style={{ marginTop: 42 }}>
+            <div style={{ marginTop: 46 }}>
               <Heading>Submitted To</Heading>
               <LV label="Name" value={data.submittedTo.name} boldValue />
               <LV label="Designation" value={data.submittedTo.designation} />
@@ -153,7 +153,7 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
               <Bold>{UNIVERSITY_NAME}</Bold>
             </div>
 
-            <div style={{ marginTop: 32 }}>
+            <div style={{ marginTop: 36 }}>
               <Heading>Submitted By</Heading>
               <LV label="Name" value={data.submittedBy.name} boldValue />
               <LV label="ID" value={data.submittedBy.studentId} />
@@ -163,14 +163,14 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
               <Bold>{UNIVERSITY_NAME}</Bold>
             </div>
 
-            <div style={{ marginTop: 'auto', paddingTop: 24, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ marginTop: 'auto', paddingTop: 20, display: 'flex', justifyContent: 'center' }}>
               <span
                 style={{
-                  border: `1.5px solid ${NAVY}`,
+                  border: `2px solid ${NAVY}`,
                   borderRadius: 999,
-                  padding: '9px 22px',
+                  padding: '10px 24px',
                   fontWeight: 700,
-                  fontSize: 16.5,
+                  fontSize: 18.5,
                   color: INK,
                 }}
               >
@@ -179,8 +179,10 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
             </div>
           </>
         )}
+      </div>
 
-        <div style={{ textAlign: 'center', fontSize: 10.5, color: MUTED, marginTop: 14 }}>{COVER_FOOTER}</div>
+      <div style={{ position: 'absolute', bottom: 36, left: 0, right: 0, textAlign: 'center', fontSize: 11, color: MUTED }}>
+        {COVER_FOOTER}
       </div>
     </div>
   );
