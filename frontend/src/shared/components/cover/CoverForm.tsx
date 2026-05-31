@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, FileText, Image as ImageIcon, Loader2, Plus, Trash2, CheckCircle2, Eye, FolderOpen } from 'lucide-react';
 import TeacherDirectorySelect from '@/shared/components/TeacherDirectorySelect';
 import { openToolsFile, openToolsFolder } from '@/shared/lib/toolsFileActions';
@@ -41,11 +41,39 @@ const CoverForm: React.FC<CoverFormProps> = ({ kind, courses, autofill, onBack }
 
   const [data, setData] = useState<CoverData>(() => {
     const base = createEmptyCoverData(kind);
-    base.submittedBy.name = autofill.name ?? '';
-    base.submittedBy.studentId = autofill.studentId ?? '';
-    base.submittedBy.section = autofill.section ?? '';
+    base.submittedBy.name = localStorage.getItem('cover_last_student_name') ?? autofill.name ?? '';
+    base.submittedBy.studentId = localStorage.getItem('cover_last_student_id') ?? autofill.studentId ?? '';
+    base.submittedBy.section = localStorage.getItem('cover_last_section') ?? autofill.section ?? '';
+    base.submittedBy.semester = localStorage.getItem('cover_last_student_semester') ?? '';
+    base.submittedBy.department = localStorage.getItem('cover_last_student_department') ?? base.submittedBy.department;
+
+    base.submittedTo.name = localStorage.getItem('cover_last_teacher_name') ?? '';
+    base.submittedTo.designation = localStorage.getItem('cover_last_teacher_designation') ?? '';
+    base.submittedTo.department = localStorage.getItem('cover_last_teacher_department') ?? base.submittedTo.department;
+
     return base;
   });
+
+  useEffect(() => {
+    if (data.submittedBy.name) localStorage.setItem('cover_last_student_name', data.submittedBy.name);
+    if (data.submittedBy.studentId) localStorage.setItem('cover_last_student_id', data.submittedBy.studentId);
+    if (data.submittedBy.section) localStorage.setItem('cover_last_section', data.submittedBy.section);
+    if (data.submittedBy.semester) localStorage.setItem('cover_last_student_semester', data.submittedBy.semester);
+    if (data.submittedBy.department) localStorage.setItem('cover_last_student_department', data.submittedBy.department);
+
+    if (data.submittedTo.name) localStorage.setItem('cover_last_teacher_name', data.submittedTo.name);
+    if (data.submittedTo.designation) localStorage.setItem('cover_last_teacher_designation', data.submittedTo.designation);
+    if (data.submittedTo.department) localStorage.setItem('cover_last_teacher_department', data.submittedTo.department);
+  }, [
+    data.submittedBy.name,
+    data.submittedBy.studentId,
+    data.submittedBy.section,
+    data.submittedBy.semester,
+    data.submittedBy.department,
+    data.submittedTo.name,
+    data.submittedTo.designation,
+    data.submittedTo.department,
+  ]);
 
   const [busy, setBusy] = useState<CoverExportFormat | null>(null);
   const [savedMsg, setSavedMsg] = useState<string | null>(null);

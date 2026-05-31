@@ -15,7 +15,8 @@ export type OfflineResource =
   | 'notices'
   | 'deadlines'
   | 'academic_calendar'
-  | 'batches';
+  | 'batches'
+  | 'teachers';
 
 interface CacheEntry {
   key: string;
@@ -67,6 +68,7 @@ function stableParams(params: Record<string, unknown>): string {
 export function offlineCacheKey(resource: OfflineResource, params: Record<string, unknown> = {}): string {
   if (resource === 'academic_calendar') return 'academic_calendar:global';
   if (resource === 'batches') return 'batches:all';
+  if (resource === 'teachers') return 'teachers:all';
   return `${resource}:${stableParams(params)}`;
 }
 

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { resolveMediaUrl } from '@/shared/utils/mediaUrl';
+import { fetchWithOfflineCache } from '@/shared/lib/offlineFetch';
+import { offlineCacheKey } from '@/shared/lib/offlineCache';
 
 type TeacherRow = {
   id: string;
@@ -60,11 +62,17 @@ export default function TeacherDirectorySelect({
   useEffect(() => {
     let alive = true;
     setLoading(true);
-    fetch(`${API_BASE}/teachers`)
-      .then((r) => r.json())
+    fetchWithOfflineCache<TeacherRow[]>({
+      cacheKey: offlineCacheKey('teachers'),
+      fetcher: async () => {
+        const r = await fetch(`${API_BASE}/teachers`);
+        const data = await r.json();
+        return Array.isArray(data) ? data : [];
+      },
+    })
       .then((data) => {
         if (!alive) return;
-        setAllTeachers(Array.isArray(data) ? data : []);
+        setAllTeachers(data || []);
       })
       .catch(() => {
         if (!alive) return;

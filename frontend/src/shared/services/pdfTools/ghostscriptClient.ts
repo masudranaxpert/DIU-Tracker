@@ -1,7 +1,5 @@
 import type { GhostscriptQuality } from './ghostscriptPresets';
 
-const WORKER_URL = `${import.meta.env.BASE_URL}pdf-compress/pdf-compress.worker.js`;
-
 export interface GhostscriptProgress {
   current: number;
   total: number;
@@ -15,15 +13,50 @@ type WorkerResponse =
   | { type: 'error'; error: string };
 
 let worker: Worker | null = null;
+let workerBlobUrl: string | null = null;
 let readyPromise: Promise<void> | null = null;
 let jobCount = 0;
 
 const MAX_JOBS_BEFORE_RECYCLE = 3;
 
+async function prepareWorker(): Promise<Worker> {
+  if (worker) return worker;
+
+  const baseUrl = import.meta.env.BASE_URL || '/';
+  const workerUrl = `${baseUrl}pdf-compress/pdf-compress.worker.js`;
+  const gsUrl = `${baseUrl}pdf-compress/gs.js`;
+
+  try {
+    const [workerRes, gsRes] = await Promise.all([
+      fetch(workerUrl),
+      fetch(gsUrl),
+    ]);
+
+    if (!workerRes.ok || !gsRes.ok) {
+      throw new Error(`Failed to load PDF worker assets (worker: ${workerRes.status}, gs: ${gsRes.status})`);
+    }
+
+    const workerCode = await workerRes.text();
+    const gsCode = await gsRes.text();
+
+    const combinedCode = `${gsCode}\n\n${workerCode}`;
+    const blob = new Blob([combinedCode], { type: 'application/javascript' });
+    
+    workerBlobUrl = URL.createObjectURL(blob);
+    worker = new Worker(workerBlobUrl);
+    jobCount = 0;
+    return worker;
+  } catch (err) {
+    console.error('Failed to initialize isolated offline PDF worker, falling back:', err);
+    worker = new Worker(workerUrl);
+    jobCount = 0;
+    return worker;
+  }
+}
+
 function getWorker(): Worker {
   if (!worker) {
-    worker = new Worker(WORKER_URL);
-    jobCount = 0;
+    throw new Error('Worker not initialized. Call ensureGhostscriptReady first.');
   }
   return worker;
 }
@@ -37,39 +70,42 @@ function recycleWorkerIfNeeded(): void {
 export async function ensureGhostscriptReady(): Promise<void> {
   if (readyPromise) return readyPromise;
 
-  readyPromise = new Promise((resolve, reject) => {
-    const w = getWorker();
-    const timeout = setTimeout(() => {
-      cleanup();
-      reject(new Error('PDF tools took too long to start. Please try again.'));
-    }, 300000);
+  readyPromise = (async () => {
+    const w = await prepareWorker();
 
-    const onError = (event: ErrorEvent) => {
-      cleanup();
-      reject(new Error(event.message || 'Something went wrong. Please try again.'));
-    };
-
-    const onMessage = (event: MessageEvent<WorkerResponse>) => {
-      const msg = event.data;
-      if (msg.type === 'ready') {
+    return new Promise<void>((resolve, reject) => {
+      const timeout = setTimeout(() => {
         cleanup();
-        resolve();
-      } else if (msg.type === 'error') {
+        reject(new Error('PDF tools took too long to start. Please try again.'));
+      }, 300000);
+
+      const onError = (event: ErrorEvent) => {
         cleanup();
-        reject(new Error(msg.error || 'Could not start PDF tools. Please restart the app.'));
-      }
-    };
+        reject(new Error(event.message || 'Something went wrong. Please try again.'));
+      };
 
-    const cleanup = () => {
-      clearTimeout(timeout);
-      w.removeEventListener('message', onMessage);
-      w.removeEventListener('error', onError);
-    };
+      const onMessage = (event: MessageEvent<WorkerResponse>) => {
+        const msg = event.data;
+        if (msg.type === 'ready') {
+          cleanup();
+          resolve();
+        } else if (msg.type === 'error') {
+          cleanup();
+          reject(new Error(msg.error || 'Could not start PDF tools. Please restart the app.'));
+        }
+      };
 
-    w.addEventListener('message', onMessage);
-    w.addEventListener('error', onError);
-    w.postMessage({ type: 'init' });
-  });
+      const cleanup = () => {
+        clearTimeout(timeout);
+        w.removeEventListener('message', onMessage);
+        w.removeEventListener('error', onError);
+      };
+
+      w.addEventListener('message', onMessage);
+      w.addEventListener('error', onError);
+      w.postMessage({ type: 'init' });
+    });
+  })();
 
   return readyPromise;
 }
@@ -219,6 +255,10 @@ export function terminateGhostscriptWorker(): void {
   if (worker) {
     worker.terminate();
     worker = null;
+  }
+  if (workerBlobUrl) {
+    URL.revokeObjectURL(workerBlobUrl);
+    workerBlobUrl = null;
   }
   readyPromise = null;
   jobCount = 0;
