@@ -1,4 +1,5 @@
 export const API_MEDIA_BASE = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
+const LOCAL_ORIGIN_REGEX = /^https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?/;
 
 /** Extract /static/... path from stored media URLs (relative or absolute). */
 function toStaticPath(url: string): string | null {
@@ -16,17 +17,19 @@ export function resolveMediaUrl(url?: string | null, cacheBuster?: number): stri
   const staticPath = toStaticPath(url);
   let resolved: string;
 
-  if (staticPath && typeof window !== 'undefined') {
+  const isCapacitor = typeof window !== 'undefined' && (window as any).Capacitor;
+
+  if (staticPath && typeof window !== 'undefined' && !isCapacitor) {
     resolved = `${window.location.origin}${staticPath}`;
-  } else if (url.startsWith('http://127.0.0.1:') || url.startsWith('http://localhost:')) {
-    resolved = url
-      .replace('http://127.0.0.1:8000', API_MEDIA_BASE)
-      .replace('http://localhost:8000', API_MEDIA_BASE);
+  } else if (staticPath) {
+    resolved = `${API_MEDIA_BASE}${staticPath}`;
+  } else if (LOCAL_ORIGIN_REGEX.test(url)) {
+    resolved = url.replace(LOCAL_ORIGIN_REGEX, API_MEDIA_BASE);
   } else if (url.startsWith('http')) {
     resolved = url;
   } else if (url.startsWith('/')) {
     resolved =
-      typeof window !== 'undefined'
+      typeof window !== 'undefined' && !isCapacitor
         ? `${window.location.origin}${url}`
         : `${API_MEDIA_BASE}${url}`;
   } else {

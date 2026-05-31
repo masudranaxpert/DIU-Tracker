@@ -21,9 +21,10 @@ interface CoverDocumentProps {
   data: CoverData;
 }
 
-const LV: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+const LV: React.FC<{ label: string; value: string; boldValue?: boolean }> = ({ label, value, boldValue = false }) => (
   <div style={{ fontSize: 17.5, lineHeight: 1.7, color: INK }}>
-    <span style={{ fontWeight: 700 }}>{label}:</span> <span style={{ fontWeight: 400 }}>{value || ''}</span>
+    <span style={{ fontWeight: 700 }}>{label}:</span>{' '}
+    <span style={{ fontWeight: boldValue ? 800 : 400 }}>{value || ''}</span>
   </div>
 );
 
@@ -146,7 +147,7 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
           <>
             <div style={{ marginTop: 42 }}>
               <Heading>Submitted To</Heading>
-              <LV label="Name" value={data.submittedTo.name} />
+              <LV label="Name" value={data.submittedTo.name} boldValue />
               <LV label="Designation" value={data.submittedTo.designation} />
               <Bold>Department of {data.submittedTo.department || '—'}</Bold>
               <Bold>{UNIVERSITY_NAME}</Bold>
@@ -154,7 +155,7 @@ const CoverDocument = forwardRef<HTMLDivElement, CoverDocumentProps>(({ data }, 
 
             <div style={{ marginTop: 32 }}>
               <Heading>Submitted By</Heading>
-              <LV label="Name" value={data.submittedBy.name} />
+              <LV label="Name" value={data.submittedBy.name} boldValue />
               <LV label="ID" value={data.submittedBy.studentId} />
               <LV label="Section" value={data.submittedBy.section} />
               <LV label="Semester" value={data.submittedBy.semester} />

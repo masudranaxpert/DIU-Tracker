@@ -95,7 +95,7 @@ const CoverForm: React.FC<CoverFormProps> = ({ kind, courses, autofill, onBack }
       ...prev,
       courseTitle: course.name || prev.courseTitle,
       courseCode: course.code || prev.courseCode,
-      submittedTo: { ...prev.submittedTo, name: prev.submittedTo.name || course.teacher || '' },
+      submittedTo: { ...prev.submittedTo, name: prev.submittedTo.name },
     }));
     setSavedMsg(null);
   }, []);
