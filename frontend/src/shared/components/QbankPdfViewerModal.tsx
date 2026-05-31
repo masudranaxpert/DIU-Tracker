@@ -255,14 +255,8 @@ const PdfPagesViewer: React.FC<PdfPagesViewerProps> = ({ pdfUrl, scale, onPageCo
         const pdfjs = ensurePdfJsWorker();
         const docInit = getPdfJsDocumentInit();
 
-        let resolvedUrl = pdfUrl;
-        if (pdfUrl.includes('diuqbank.com')) {
-          const apiBase = (import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000').replace(/\/$/, '');
-          resolvedUrl = `${apiBase}/qbank/proxy-pdf?url=${encodeURIComponent(pdfUrl)}`;
-        }
-
         const loadingTask = pdfjs.getDocument({
-          url: resolvedUrl,
+          url: pdfUrl,
           ...docInit,
         });
 
